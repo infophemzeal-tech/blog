@@ -9,7 +9,7 @@ import CommentsSection from "@/components/CommentsSection"
 import type { Article } from "@/data/articles"
 import AudioReader from "@/components/AudioReader"
 import ShareButton from "@/components/ShareButton"
-
+import Image from "next/image"
 import ArticleActions from "@/components/ArticleActions"
 
 type Props = {
@@ -174,10 +174,13 @@ export default async function ArticlePage({ params }: Props) {
 {/* Cover image */}
 {data.cover_image ? (
   <div className="relative aspect-[16/9] overflow-hidden mb-12 -mx-4 sm:mx-0 sm:rounded-xl w-[calc(100%+2rem)] sm:w-full">
-    <img
+    <Image
       src={data.cover_image}
       alt={`Cover image for ${data.title}`}
-      className="absolute inset-0 w-full h-full object-cover"
+      fill
+      sizes="(max-width: 640px) 100vw, 680px"
+      className="object-cover"
+      priority
     />
   </div>
 ) : (
