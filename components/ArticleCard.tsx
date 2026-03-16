@@ -84,23 +84,22 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         </div>
       </div>
 
-      {/* Thumbnail */}
-      <Link href={`/article/${article.slug}`} className="shrink-0">
-        <div className="relative w-16 h-14 sm:w-24 sm:h-20 rounded-lg overflow-hidden bg-stone-200 dark:bg-stone-700 hover:opacity-80 transition-opacity">
-          {article.coverImage ? (
-            <Image
-  src={article.coverImage}
-  alt={article.title}
-  fill
-  sizes="(max-width: 640px) 64px, 96px"
-  className="object-cover object-top"
-/>
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-400 dark:from-stone-600 dark:to-stone-700" />
-          )}
-        </div>
-      </Link>
-
+     {/* Thumbnail */}
+<Link href={`/article/${article.slug}`} className="shrink-0">
+  <div className="relative w-28 h-20 sm:w-36 sm:h-24 rounded-lg overflow-hidden bg-stone-200 dark:bg-stone-700 hover:opacity-80 transition-opacity">
+    {article.coverImage ? (
+      <Image
+        src={article.coverImage}
+        alt={article.title}
+        fill
+        sizes="(max-width: 640px) 112px, 144px"
+        className="object-cover"
+      />
+    ) : (
+      <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-400 dark:from-stone-600 dark:to-stone-700" />
+    )}
+  </div>
+</Link>
     </div>
   )
 }
