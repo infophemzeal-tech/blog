@@ -89,7 +89,7 @@ export default function RichEditor({ value, onChange, placeholder }: Props) {
 })
   useEffect(() => {
   if (editor && value !== editor.getHTML()) {
-    editor.commands.setContent(value, false, { preserveWhitespace: "full" })
+    editor.commands.setContent(value)
   }
 }, [value])
   const setLink = useCallback(() => {

@@ -22,6 +22,13 @@ type Props = {
   initialCount: number
 }
 
+const normalize = (c: any): Comment => ({
+  ...c,
+  profiles: Array.isArray(c.profiles)
+    ? c.profiles[0] ?? { full_name: null }
+    : c.profiles ?? { full_name: null },
+})
+
 function CommentItem({
   comment,
   articleId,
@@ -83,7 +90,7 @@ function CommentItem({
       .single()
 
     if (!error && data) {
-      onReplyAdded(data as Comment, comment.id)
+      onReplyAdded(normalize(data), comment.id)
       setReplyBody("")
       setReplyOpen(false)
     }
@@ -269,9 +276,8 @@ export default function CommentsSection({ articleId, initialCount }: Props) {
       .order("created_at", { ascending: true })
 
     if (data) {
-      // Build nested structure — separate top level from replies
-      const topLevel = (data as Comment[]).filter((c) => !c.parent_id)
-      const replies = (data as Comment[]).filter((c) => c.parent_id)
+      const topLevel = (data as any[]).filter((c) => !c.parent_id).map(normalize)
+      const replies = (data as any[]).filter((c) => c.parent_id).map(normalize)
 
       const nested = topLevel.map((comment) => ({
         ...comment,
@@ -308,7 +314,7 @@ export default function CommentsSection({ articleId, initialCount }: Props) {
       .single()
 
     if (!error && data) {
-      const newComment = { ...(data as Comment), replies: [] }
+      const newComment: Comment = { ...normalize(data), replies: [] }
       setComments((prev) => [...prev, newComment])
       setCount((c) => c + 1)
       setBody("")
@@ -325,7 +331,6 @@ export default function CommentsSection({ articleId, initialCount }: Props) {
 
     if (!error) {
       if (parentId) {
-        // Remove reply from nested structure
         setComments((prev) =>
           prev.map((c) =>
             c.id === parentId
@@ -334,7 +339,6 @@ export default function CommentsSection({ articleId, initialCount }: Props) {
           )
         )
       } else {
-        // Remove top level comment and its replies
         setComments((prev) => prev.filter((c) => c.id !== commentId))
       }
       setCount((c) => Math.max(c - 1, 0))
