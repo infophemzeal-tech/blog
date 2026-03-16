@@ -84,15 +84,15 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         </div>
       </div>
 
-     {/* Thumbnail */}
+{/* Thumbnail */}
 <Link href={`/article/${article.slug}`} className="shrink-0">
-  <div className="relative w-28 h-20 sm:w-36 sm:h-24 rounded-lg overflow-hidden bg-stone-200 dark:bg-stone-700 hover:opacity-80 transition-opacity">
+  <div className="relative w-24 h-16 sm:w-32 sm:h-20 md:w-40 md:h-24 lg:w-44 lg:h-28 rounded-lg overflow-hidden bg-stone-200 dark:bg-stone-700 hover:opacity-80 transition-opacity">
     {article.coverImage ? (
       <Image
         src={article.coverImage}
         alt={article.title}
         fill
-        sizes="(max-width: 640px) 112px, 144px"
+        sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, (max-width: 1024px) 160px, 176px"
         className="object-cover"
       />
     ) : (
