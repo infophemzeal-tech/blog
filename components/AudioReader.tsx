@@ -487,7 +487,7 @@ export default function AudioReader({
     },[speakParagraph, startMusic]
   )
 
-  const jumpToRef = useRef<(index: number) => void>()
+  const jumpToRef = useRef<(index: number) => void>(null)
   useEffect(() => {
     jumpToRef.current = (index: number) => playFromIndex(index)
   }, [playFromIndex])
