@@ -171,16 +171,18 @@ export default async function ArticlePage({ params }: Props) {
             </span>
           </div>
         )}
-  {/* Cover image */}
-        {data.cover_image ? (
-          <img
-            src={data.cover_image}
-            alt={`Cover image for ${data.title}`}
-            className="w-full h-72 sm:h-96 rounded-xl object-cover mb-12"
-          />
-        ) : (
-          <div className="w-full h-72 sm:h-96 rounded-xl bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-700 dark:to-stone-800 mb-12" />
-        )}
+ {/* Cover image */}
+{data.cover_image ? (
+  <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden mb-12">
+    <img
+      src={data.cover_image}
+      alt={`Cover image for ${data.title}`}
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+  </div>
+) : (
+  <div className="relative w-full aspect-[16/9] rounded-xl bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-700 dark:to-stone-800 mb-12" />
+)}
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-stone-900 dark:text-white leading-[1.15] mb-6">
           {data.title}
         </h1>
