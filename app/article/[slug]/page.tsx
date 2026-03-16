@@ -11,6 +11,7 @@ import AudioReader from "@/components/AudioReader"
 import ShareButton from "@/components/ShareButton"
 import Image from "next/image"
 import ArticleActions from "@/components/ArticleActions"
+import ViewTracker from "@/components/ViewTracker"
 
 type Props = {
   params: { slug: string }
@@ -132,7 +133,7 @@ export default async function ArticlePage({ params }: Props) {
     <main className="min-h-screen bg-white dark:bg-stone-950">
 
       <ReadingProgress />
-
+      
       {/* JSON-LD Schema */}
       <script
         type="application/ld+json"
@@ -155,7 +156,7 @@ export default async function ArticlePage({ params }: Props) {
           }),
         }}
       />
-
+<ViewTracker articleId={data.id} />
       {/* Full shared Navbar — same as homepage */}
       <div className="max-w-5xl mx-auto">
         <Navbar />
