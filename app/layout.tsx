@@ -4,12 +4,13 @@ import "./globals.css"
 import ThemeProvider from "@/components/ThemeProvider"
 import SearchProvider from "@/components/SearchProvider"
 import AuthProvider from "@/components/AuthProvider"
+import Footer from "@/components/Footer"
 
 const geist = Geist({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Medium Clone",
-  description: "A Medium clone built with Next.js",
+  title: "GistPadi",
+  description: "A community of curious readers and writers",
 }
 
 export default function RootLayout({
@@ -19,15 +20,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geist.className} bg-white dark:bg-stone-950 transition-colors duration-300`}>
+      <body className={`${geist.className} bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen`}>
         <ThemeProvider>
           <AuthProvider>
             <SearchProvider>
-              {children}
+              <div className="flex-1">
+                {children}
+              </div>
+              <Footer />
             </SearchProvider>
           </AuthProvider>
         </ThemeProvider>
-      
       </body>
     </html>
   )
