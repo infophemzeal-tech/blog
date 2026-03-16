@@ -40,7 +40,7 @@ export default function ArticleCard({ article }: ArticleCardProps) {
         </p>
 
         {/* Bottom row */}
-        <div className="flex items-center gap-3 text-xs text-stone-400 dark:text-stone-500 mt-1">
+        <div className="flex items-center gap-3 text-xs text-stone-400 dark:text-stone-500 mt-1 flex-wrap">
 
           <svg width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B" stroke="none">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -63,20 +63,19 @@ export default function ArticleCard({ article }: ArticleCardProps) {
             <span>{article.comments}</span>
           </div>
 
-          <div className="ml-auto flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {/* Always visible on mobile, hover on desktop */}
+          <div className="ml-auto flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
             <button className="hover:text-stone-700 dark:hover:text-white transition-colors cursor-pointer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/>
                 <path d="M17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17"/>
               </svg>
             </button>
-
             <button className="hover:text-stone-700 dark:hover:text-white transition-colors cursor-pointer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
               </svg>
             </button>
-
             <button className="hover:text-stone-700 dark:hover:text-white transition-colors cursor-pointer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="5" cy="12" r="1" fill="currentColor"/>

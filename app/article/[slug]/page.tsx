@@ -171,9 +171,9 @@ export default async function ArticlePage({ params }: Props) {
             </span>
           </div>
         )}
- {/* Cover image */}
+{/* Cover image */}
 {data.cover_image ? (
-  <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden mb-12">
+  <div className="relative aspect-[16/9] overflow-hidden mb-12 -mx-4 sm:mx-0 sm:rounded-xl w-[calc(100%+2rem)] sm:w-full">
     <img
       src={data.cover_image}
       alt={`Cover image for ${data.title}`}
@@ -181,29 +181,30 @@ export default async function ArticlePage({ params }: Props) {
     />
   </div>
 ) : (
-  <div className="relative w-full aspect-[16/9] rounded-xl bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-700 dark:to-stone-800 mb-12" />
+  <div className="relative aspect-[16/9] overflow-hidden mb-12 -mx-4 sm:mx-0 sm:rounded-xl w-[calc(100%+2rem)] sm:w-full bg-gradient-to-br from-stone-200 to-stone-300 dark:from-stone-700 dark:to-stone-800" />
 )}
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-stone-900 dark:text-white leading-[1.15] mb-6">
-          {data.title}
-        </h1>
+     <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900 dark:text-white leading-[1.15] mb-6">
+  {data.title}
+</h1>
 
-        {data.subtitle && (
-          <p className="font-serif text-xl sm:text-2xl text-stone-500 dark:text-stone-400 leading-relaxed mb-10">
-            {data.subtitle}
-          </p>
-        )}
-
-      {/* Author card */}
-<div className="flex items-center justify-between py-4 border-y border-stone-200 dark:border-stone-800 mb-10">
+{data.subtitle && (
+  <p className="font-serif text-lg sm:text-2xl text-stone-500 dark:text-stone-400 leading-relaxed mb-10">
+    {data.subtitle}
+  </p>
+)}
+{/* Author card */}
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 border-y border-stone-200 dark:border-stone-800 mb-10">
+  
+  {/* Left — author info */}
   <div className="flex items-center gap-3">
-    <div className="w-12 h-12 rounded-full bg-stone-800 dark:bg-stone-600 flex items-center justify-center text-white text-lg font-medium shrink-0">
+    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-stone-800 dark:bg-stone-600 flex items-center justify-center text-white text-lg font-medium shrink-0">
       {authorInitial}
     </div>
     <div>
       <p className="text-sm font-medium text-stone-900 dark:text-white">
         {authorName}
       </p>
-      <div className="flex items-center gap-2 text-xs text-stone-400 dark:text-stone-500 mt-0.5">
+      <div className="flex items-center gap-2 text-xs text-stone-400 dark:text-stone-500 mt-0.5 flex-wrap">
         <span>{date}</span>
         <span>·</span>
         <span>{data.read_time}</span>
@@ -212,16 +213,15 @@ export default async function ArticlePage({ params }: Props) {
       </div>
     </div>
   </div>
-  <div className="flex items-center gap-3">
 
-    {/* Show edit button only for author */}
+  {/* Right — actions */}
+  <div className="flex items-center gap-2 sm:gap-3">
     <ArticleActions
       authorId={data.author_id}
       articleId={data.id}
       slug={data.slug}
     />
-
-    <button className="px-4 py-1.5 rounded-full border border-stone-900 dark:border-stone-400 text-sm text-stone-900 dark:text-stone-300 hover:bg-stone-900 dark:hover:bg-stone-700 hover:text-white transition-colors cursor-pointer">
+    <button className="px-3 sm:px-4 py-1.5 rounded-full border border-stone-900 dark:border-stone-400 text-sm text-stone-900 dark:text-stone-300 hover:bg-stone-900 dark:hover:bg-stone-700 hover:text-white transition-colors cursor-pointer">
       Follow
     </button>
     <button className="text-stone-400 hover:text-stone-700 dark:hover:text-white transition-colors cursor-pointer">
@@ -229,7 +229,6 @@ export default async function ArticlePage({ params }: Props) {
     </button>
   </div>
 </div>
-
 
 {/* Audio reader */}
 <AudioReader
