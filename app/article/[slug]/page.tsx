@@ -240,7 +240,7 @@ export default async function ArticlePage({ params }: Props) {
 
      {/* Body */}
 <div
-  className="prose prose-lg prose-stone dark:prose-invert max-w-none font-serif leading-[1.8]
+  className="prose prose-stone dark:prose-invert max-w-none font-serif leading-[1.75]
     prose-headings:font-serif
     prose-a:text-blue-600 prose-a:dark:text-blue-400
     prose-blockquote:border-stone-300 prose-blockquote:dark:border-stone-600
