@@ -129,6 +129,15 @@ export default async function ArticlePage({ params }: Props) {
     ? `${(data.claps_count / 1000).toFixed(1)}K`
     : String(data.claps_count)
 
+ const formatNumber = (num: number): string => {
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+  return num.toString()
+}
+
+type Props = {
+  params: { slug: string }
+}
+
   return (
     <main className="min-h-screen bg-white dark:bg-stone-950">
 
@@ -213,6 +222,9 @@ export default async function ArticlePage({ params }: Props) {
         <span>·</span>
         <span>{data.read_time}</span>
         <span>·</span>
+        <span>{formatNumber(data.views_count || 0)}</span>
+        <span>·</span>
+        
         <span>👏 {claps}</span>
       </div>
     </div>

@@ -31,6 +31,7 @@ export default function Feed({ activeTab }: Props) {
           read_time,
           claps_count,
           comments_count,
+          views_count, 
           cover_image,
           created_at,
           profiles (
@@ -71,6 +72,7 @@ export default function Feed({ activeTab }: Props) {
           readTime: a.read_time,
           body: "",
           coverImage: a.cover_image || "",
+          views_count: a.views_count || 0,
         }))
 
         setArticles(mapped)

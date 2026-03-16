@@ -12,4 +12,5 @@ export type Article = {
   readTime: string
   body: string
   coverImage?: string
+  views_count?: number  // Add this line
 }
