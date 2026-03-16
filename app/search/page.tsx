@@ -1,7 +1,9 @@
+// app/search/page.tsx
 import Link from "next/link"
-import { ARTICLES } from "@/components/Feed"
 import ArticleCard from "@/components/ArticleCard"
 import Navbar from "@/components/Navbar"
+import { createClient } from "@/lib/supabase/server"
+import type { Article } from "@/data/articles"
 
 type Props = {
   searchParams: Promise<{ q?: string }>
@@ -9,17 +11,49 @@ type Props = {
 
 export default async function SearchPage({ searchParams }: Props) {
   const { q } = await searchParams
-  const query = q?.toLowerCase().trim() ?? ""
+  const query = q?.trim() ?? ""
 
-  const results = query
-    ? ARTICLES.filter(
-        (article) =>
-          article.title.toLowerCase().includes(query) ||
-          article.subtitle.toLowerCase().includes(query) ||
-          article.author.toLowerCase().includes(query) ||
-          article.publication.toLowerCase().includes(query)
+  let results: Article[] = []
+
+  if (query) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from("articles")
+      .select(`
+        id, title, subtitle, slug, publication,
+        read_time, claps_count, comments_count,
+        cover_image, created_at,
+        profiles ( full_name, avatar_url )
+      `)
+      .eq("published", true)
+      .or(
+        `title.ilike.%${query}%,subtitle.ilike.%${query}%,publication.ilike.%${query}%`
       )
-    : []
+      .order("created_at", { ascending: false })
+
+    if (!error && data) {
+      results = data.map((a: any) => ({
+        id: String(a.id),
+        author: a.profiles?.full_name || "Anonymous",
+        authorInitial: (a.profiles?.full_name?.[0] || "A").toUpperCase(),
+        publication: a.publication || "",
+        slug: a.slug,
+        title: a.title,
+        subtitle: a.subtitle || "",
+        date: new Date(a.created_at).toLocaleDateString("en-US", {
+          month: "short", day: "numeric", year: "numeric",
+        }),
+        claps: a.claps_count >= 1000
+          ? `${(a.claps_count / 1000).toFixed(1)}K`
+          : String(a.claps_count),
+        comments: a.comments_count,
+        readTime: a.read_time,
+        body: "",
+        coverImage: a.cover_image || "",
+      }))
+    }
+  }
 
   return (
     <main className="max-w-5xl mx-auto">
@@ -48,7 +82,7 @@ export default async function SearchPage({ searchParams }: Props) {
           )}
         </div>
 
-        {/* Results */}
+        {/* No results */}
         {query && results.length === 0 && (
           <div className="text-center py-16">
             <p className="text-4xl mb-4">🔍</p>
@@ -67,6 +101,7 @@ export default async function SearchPage({ searchParams }: Props) {
           </div>
         )}
 
+        {/* Results */}
         {results.length > 0 && (
           <div className="flex flex-col">
             {results.map((article) => (
@@ -75,6 +110,7 @@ export default async function SearchPage({ searchParams }: Props) {
           </div>
         )}
 
+        {/* Empty state */}
         {!query && (
           <div className="text-center py-16">
             <p className="text-4xl mb-4">✍️</p>
