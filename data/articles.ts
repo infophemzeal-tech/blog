@@ -13,5 +13,3 @@ export type Article = {
   body: string
   coverImage?: string
 }
-
-export const ARTICLES: Article[] = []

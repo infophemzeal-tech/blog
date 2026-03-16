@@ -27,6 +27,7 @@ export default function RootLayout({
             </SearchProvider>
           </AuthProvider>
         </ThemeProvider>
+      
       </body>
     </html>
   )
