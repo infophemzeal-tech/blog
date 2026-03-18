@@ -1,40 +1,40 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-// 1. Define the type where params is a Promise
-type Context = {
-  params: Promise<{ id: string }>
+// Define the exact type expected by Next.js 15
+interface RouteContext {
+  params: Promise<{ id: string }>;
 }
-export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: NextRequest,
-  context: Context // 2. Use the context type here
+  context: RouteContext // Accessing via a context object
 ) {
-  // 3. Await the params before using 'id'
-  const { id } = await context.params
-  
-  const supabase = await createClient()
+  // 1. You MUST await the params before using them
+  const { id } = await context.params;
+
+  const supabase = await createClient();
 
   try {
-    // Your logic to increment views...
-    const { data, error } = await supabase
-      .from('articles')
-      .select('views_count')
-      .eq('id', id)
-      .single()
+    // Logic to increment views (Example)
+    const { data: currentData, error: fetchError } = await supabase
+      .from("articles")
+      .select("views_count")
+      .eq("id", id)
+      .single();
 
-    if (error) throw error
+    if (fetchError) throw fetchError;
 
     const { error: updateError } = await supabase
-      .from('articles')
-      .update({ views_count: (data.views_count || 0) + 1 })
-      .eq('id', id)
+      .from("articles")
+      .update({ views_count: (currentData?.views_count || 0) + 1 })
+      .eq("id", id);
 
-    if (updateError) throw updateError
+    if (updateError) throw updateError;
 
-    return NextResponse.json({ success: true })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("View tracking error:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
