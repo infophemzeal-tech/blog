@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition, useCallback } from "react"
+import { useTransition, useCallback, Suspense } from "react" // 1. Added Suspense import
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import TopBanner from "@/components/TopBanner"
 import Navbar from "@/components/Navbar"
@@ -8,13 +8,18 @@ import Tabs from "@/components/Tabs"
 import Feed from "@/components/Feed"
 import Sidebar from "@/components/Sidebar"
 
-export default function Home() {
+/**
+ * HOME CONTENT
+ * This component handles all the logic and UI.
+ * It is called inside a Suspense boundary below.
+ */
+function HomeContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
-  // Derive all state from URL for consistency
+  // Derive state from URL
   const activeTopic = searchParams.get("topic") || ""
   const activeTab = (searchParams.get("tab") as "for-you" | "featured") || "for-you"
 
@@ -26,7 +31,6 @@ export default function Home() {
       else params.delete(key)
     })
 
-    // startTransition keeps the UI responsive while the router navigates
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`, { scroll: false })
     })
@@ -37,7 +41,7 @@ export default function Home() {
       <TopBanner />
       <Navbar />
 
-      <div className={`flex gap-12 px-4 mt-8 transition-opacity ${isPending ? 'opacity-70' : 'opacity-100'}`}>
+      <div className={`flex gap-12 px-4 mt-8 transition-opacity duration-300 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
         
         {/* Left — feed */}
         <div className="flex-1 min-w-0">
@@ -48,10 +52,10 @@ export default function Home() {
           
           {activeTopic && (
             <div className="flex items-center gap-2 py-3">
-              <span className="text-sm text-stone-500 dark:text-stone-400">
+              <span className="text-sm text-stone-500 dark:text-stone-400 font-sans">
                 Filtering by:
               </span>
-              <span className="px-3 py-1 rounded-full bg-green-600 text-white text-sm font-medium capitalize">
+              <span className="px-3 py-1 rounded-full bg-green-600 text-white text-[11px] font-bold uppercase tracking-tight">
                 {activeTopic.replace(/-/g, " ")}
               </span>
               <button
@@ -67,7 +71,7 @@ export default function Home() {
         </div>
 
         {/* Right — sidebar */}
-        <div className="w-72 shrink-0 hidden lg:block">
+        <div className="w-72 shrink-0 hidden lg:block font-sans">
           <div className="pt-6 pl-8 border-l border-stone-100 dark:border-stone-800">
             <Sidebar 
               activeTopic={activeTopic} 
@@ -77,5 +81,22 @@ export default function Home() {
         </div>
       </div>
     </main>
+  )
+}
+
+/**
+ * DEFAULT EXPORT
+ * Next.js requires any page using useSearchParams to be wrapped in Suspense.
+ * This ensures the build finishes correctly.
+ */
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-stone-950">
+        <div className="w-6 h-6 border-2 border-stone-200 border-t-stone-800 dark:border-t-white rounded-full animate-spin" />
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   )
 }

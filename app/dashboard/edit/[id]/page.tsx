@@ -1,21 +1,28 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import ImageUpload from "@/components/ImageUpload"
 import RichEditor from "@/components/RichEditor"
+import Swal from "sweetalert2"
 
-type Topic = {
-  id: number
-  name: string
-}
+// --- Types ---
+type Topic = { id: number; name: string }
+type TopicCategory = { id: number; name: string; topics: Topic[] }
 
-type TopicCategory = {
-  id: number
-  name: string
-  topics: Topic[]
-}
+// --- Compact SweetAlert Config ---
+const swalConfig = (isDark: boolean) => ({
+  width: '340px',
+  padding: '1.25rem',
+  background: isDark ? '#1c1917' : '#fff',
+  color: isDark ? '#fff' : '#000',
+  customClass: {
+    title: 'font-serif text-lg font-bold',
+    htmlContainer: 'font-sans text-xs opacity-70',
+    confirmButton: 'font-sans text-xs px-4 py-2 rounded-full font-bold bg-stone-900 dark:bg-white text-white dark:text-stone-900',
+  }
+})
 
 export default function EditPage() {
   const [title, setTitle] = useState("")
@@ -24,55 +31,41 @@ export default function EditPage() {
   const [publication, setPublication] = useState("")
   const [coverImage, setCoverImage] = useState("")
   const [published, setPublished] = useState(true)
-  const [readTime, setReadTime] = useState("")
   
   const [categories, setCategories] = useState<TopicCategory[]>([])
   const [topicId, setTopicId] = useState<string | number>("")
   
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
-  const [error, setError] = useState("")
   
   const router = useRouter()
   const params = useParams()
-  
   const supabase = createClient()
+  const titleRef = useRef<HTMLTextAreaElement>(null)
+
+  // Auto-resize for Title
+  const handleAutoResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.target.style.height = "auto"
+    e.target.style.height = `${e.target.scrollHeight}px`
+  }
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // Fetch topic categories with nested topics
-        const { data: categoriesData, error: categoriesError } = await supabase
+        const { data: categoriesData } = await supabase
           .from("topic_categories")
-          .select(`
-            id,
-            name,
-            topics (
-              id,
-              name
-            )
-          `)
+          .select(`id, name, topics (id, name)`)
           .order("id", { ascending: true })
 
-        if (categoriesError) {
-          console.error("Error fetching categories:", categoriesError)
-          setError("Failed to load topics")
-        } else if (categoriesData) {
-          setCategories(categoriesData as TopicCategory[])
-        }
+        if (categoriesData) setCategories(categoriesData as TopicCategory[])
 
-        // Fetch the existing article
         const { data: articleData, error: articleError } = await supabase
           .from("articles")
           .select("*")
           .eq("id", params.id)
           .single()
 
-        if (articleError) {
-          console.error("Error fetching article:", articleError)
-          setError("Failed to load article")
-          return
-        }
+        if (articleError) throw articleError
 
         if (articleData) {
           setTitle(articleData.title || "")
@@ -81,20 +74,16 @@ export default function EditPage() {
           setPublication(articleData.publication || "")
           setPublished(articleData.published)
           setCoverImage(articleData.cover_image || "")
-          setReadTime(articleData.read_time || "")
           setTopicId(articleData.topic_id || "")
         }
       } catch (err) {
-        console.error("Error fetching data:", err)
-        setError("An error occurred while loading the article")
+        console.error("Fetch error:", err)
       } finally {
         setFetching(false)
       }
     }
-
     fetchInitialData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id])
+  }, [params.id, supabase])
 
   const calculateReadTime = (text: string) => {
     const strippedBody = text.replace(/<[^>]+>/g, "")
@@ -105,36 +94,66 @@ export default function EditPage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setError("")
+    const isDark = document.documentElement.classList.contains('dark')
 
-    if (!title.trim()) {
-      setError("Title is required")
+    // 1. Get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // 2. SECURITY CHECK: IS BANNED?
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_banned')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.is_banned) {
       setLoading(false)
+      Swal.fire({
+        ...swalConfig(isDark),
+        icon: 'error',
+        title: 'Access Restricted',
+        text: 'You are currently banned and cannot edit stories.',
+        confirmButtonColor: '#dc2626'
+      })
       return
     }
 
-    const calculatedReadTime = calculateReadTime(body)
-
+    // 3. Perform Update
     const { error: updateError } = await supabase
       .from("articles")
       .update({
-        title,
-        subtitle,
+        title: title.trim(),
+        subtitle: subtitle.trim(),
         body,
-        publication,
+        publication: publication.trim() || null,
         published,
         cover_image: coverImage || null,
         topic_id: topicId === "" ? null : Number(topicId),
-        read_time: calculatedReadTime,
+        read_time: calculateReadTime(body),
+        updated_at: new Date().toISOString()
       })
       .eq("id", params.id)
 
     if (updateError) {
-      setError(updateError.message)
       setLoading(false)
+      Swal.fire({ ...swalConfig(isDark), icon: 'error', title: 'Error', text: updateError.message })
       return
     }
 
+    // Success Notification
+    const toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+      background: isDark ? '#1c1917' : '#fff',
+      color: isDark ? '#fff' : '#000',
+    })
+
+    toast.fire({ icon: 'success', title: 'Story updated' })
+    
     router.push("/dashboard")
     router.refresh()
   }
@@ -148,127 +167,105 @@ export default function EditPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-16">
+    <div className="max-w-3xl mx-auto px-4 pb-16 font-sans">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold font-serif text-stone-900 dark:text-white">
           Edit story
         </h1>
-        <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-stone-500 cursor-pointer select-none font-medium">
           <input
             type="checkbox"
             checked={published}
             onChange={(e) => setPublished(e.target.checked)}
-            className="rounded"
+            className="rounded text-green-600 focus:ring-green-500"
           />
           Published
         </label>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        </div>
-      )}
-
       <form onSubmit={handleUpdate} className="flex flex-col gap-6">
         
-        <ImageUpload
-          onUpload={(url) => setCoverImage(url)}
-          currentImage={coverImage}
-        />
+        <ImageUpload onUpload={setCoverImage} currentImage={coverImage} />
 
         <div className="border-t border-stone-100 dark:border-stone-800" />
 
         <textarea
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => { setTitle(e.target.value); handleAutoResize(e) }}
           placeholder="Title"
           required
           rows={1}
-          className="w-full font-serif text-4xl sm:text-5xl font-bold text-stone-900 dark:text-white bg-transparent outline-none resize-none placeholder:text-stone-300 dark:placeholder:text-stone-700 border-none leading-tight"
+          className="w-full font-serif text-4xl font-bold text-stone-900 dark:text-white bg-transparent outline-none resize-none overflow-hidden placeholder:text-stone-200 border-none leading-tight py-2"
         />
 
         <textarea
           value={subtitle}
-          onChange={(e) => setSubtitle(e.target.value)}
-          placeholder="Subtitle (optional)"
-          rows={2}
-          className="w-full font-serif text-xl text-stone-500 dark:text-stone-400 bg-transparent outline-none resize-none placeholder:text-stone-300 dark:placeholder:text-stone-700 border-none leading-relaxed"
+          onChange={(e) => { setSubtitle(e.target.value); handleAutoResize(e) }}
+          placeholder="Subtitle"
+          rows={1}
+          className="w-full font-serif text-xl text-stone-400 bg-transparent outline-none resize-none overflow-hidden placeholder:text-stone-200 border-none leading-relaxed"
         />
 
         <div className="border-t border-stone-100 dark:border-stone-800" />
 
         <div className="min-h-[400px]">
-          <RichEditor
-            value={body}
-            onChange={setBody}
-            placeholder="Tell your story..."
-          />
+          <RichEditor value={body} onChange={setBody} placeholder="Tell your story..." />
         </div>
 
-        <div className="border-t border-stone-100 dark:border-stone-800 mt-8" />
+        <div className="border-t border-stone-100 dark:border-stone-800 mt-6 pt-6" />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-stone-600 dark:text-stone-400">
-              Publication (optional)
-            </label>
-            <input
-              type="text"
-              value={publication}
-              onChange={(e) => setPublication(e.target.value)}
-              placeholder="e.g. Level Up Coding"
-              className="w-full px-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-white text-sm outline-none focus:border-stone-400 transition-colors placeholder:text-stone-400"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-stone-600 dark:text-stone-400">
-              Topic (optional)
-            </label>
+        {/* METADATA: TOPICS & PUBLICATION */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-stone-400">Topic</label>
             <select
               value={topicId}
               onChange={(e) => setTopicId(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-white text-sm outline-none focus:border-stone-400 transition-colors cursor-pointer"
+              className="w-full px-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-sm outline-none cursor-pointer"
             >
               <option value="">Select a topic...</option>
-              {categories.map((category) => (
-                <optgroup key={category.id} label={category.name}>
-                  {(category.topics || []).map((topic) => (
-                    <option key={topic.id} value={topic.id}>
-                      {topic.name}
-                    </option>
+              {categories.map((cat) => (
+                <optgroup key={cat.id} label={cat.name}>
+                  {cat.topics?.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </optgroup>
               ))}
             </select>
           </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-stone-400">Publication</label>
+            <input
+              type="text"
+              value={publication}
+              onChange={(e) => setPublication(e.target.value)}
+              placeholder="e.g. Daily Tech"
+              className="w-full px-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-sm outline-none"
+            />
+          </div>
         </div>
 
         {body && (
-          <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-900 p-3 rounded-lg">
-            <span>📖</span>
-            <span>Estimated read time: <strong>{calculateReadTime(body)}</strong></span>
+          <div className="text-xs text-stone-400 bg-stone-50 dark:bg-stone-900 p-3 rounded-lg border border-stone-100 dark:border-stone-800 inline-block w-fit">
+            📖 <strong>{calculateReadTime(body)}</strong> estimated reading time.
           </div>
         )}
 
-        <div className="border-t border-stone-100 dark:border-stone-800" />
-
-        <div className="flex gap-3 justify-end">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="px-6 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white font-medium hover:bg-stone-50 dark:hover:bg-stone-900 transition-colors"
-          >
-            Cancel
-          </button>
+        <div className="flex gap-4 items-center mt-8 pb-10">
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 rounded-lg bg-stone-900 dark:bg-white text-white dark:text-stone-900 font-medium hover:bg-stone-800 dark:hover:bg-stone-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-2.5 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
           >
-            {loading ? "Saving..." : "Save changes"}
+            {loading ? "Updating..." : "Update Story"}
+          </button>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="text-sm font-medium text-stone-400 hover:text-stone-900 transition-colors"
+          >
+            Cancel
           </button>
         </div>
       </form>
