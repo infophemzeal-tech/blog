@@ -4,6 +4,7 @@ import "./globals.css"
 import ThemeProvider from "@/components/ThemeProvider"
 import SearchProvider from "@/components/SearchProvider"
 import AuthProvider from "@/components/AuthProvider"
+import CookieConsent from "@/components/CookieConsent"
 import Footer from "@/components/Footer"
 
 const geist = Geist({ subsets: ["latin"] })
@@ -27,6 +28,7 @@ export default function RootLayout({
               <div className="flex-1">
                 {children}
               </div>
+              <CookieConsent />
               <Footer />
             </SearchProvider>
           </AuthProvider>

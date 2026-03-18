@@ -8,10 +8,11 @@ import type { Article } from "../data/articles"
 
 type Props = {
   activeTab: "for-you" | "featured"
+  activeTopic: string
 }
 
-export default function Feed({ activeTab }: Props) {
-  const { query } = useSearch()
+export default function Feed({ activeTab, activeTopic }: Props) {
+  const { query: searchKeyword } = useSearch()
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
@@ -20,7 +21,8 @@ export default function Feed({ activeTab }: Props) {
     const fetchArticles = async () => {
       setLoading(true)
 
-      const { data, error } = await supabase
+      // 1. BUILD THE QUERY
+      let queryBuilder = supabase
         .from("articles")
         .select(`
           id,
@@ -31,27 +33,63 @@ export default function Feed({ activeTab }: Props) {
           read_time,
           claps_count,
           comments_count,
-          views_count, 
+          views_count,
           cover_image,
           created_at,
+          published,
+          topic_id,
           profiles (
             full_name,
             avatar_url
           )
         `)
         .eq("published", true)
+         .eq("is_deactivated", false) // Don't show deactivated articles
+         .order("is_pinned", { ascending: false }) // PINNED FIRST
         .order(
           activeTab === "featured" ? "claps_count" : "created_at",
           { ascending: false }
         )
 
-      if (error) {
-        console.error("Feed fetch error:", error.message)
-        setLoading(false)
-        return
+
+        // ─── HANDLING TABS ──────────────────────────────────────────
+if (activeTab === "featured") {
+  // Option A: Sort by Claps (Popularity)
+  queryBuilder = queryBuilder.order("claps_count", { ascending: false })
+  
+  // Option B: (If you have an 'is_featured' column in your DB)
+  // queryBuilder = queryBuilder.eq("is_featured", true)
+} else {
+  // "For You" - Standard chronological order
+  queryBuilder = queryBuilder.order("created_at", { ascending: false })
+}
+      // 2. APPLY TOPIC FILTER BY COLUMN (Not junction table)
+      if (activeTopic) {
+        // First, get the ID for the topic name in the URL
+        const formattedTopicName = activeTopic.replace(/-/g, " ")
+        
+        const { data: topicData } = await supabase
+          .from("topics")
+          .select("id")
+          .ilike("name", formattedTopicName)
+          .single()
+
+        if (topicData) {
+          // Filter articles where 'topic_id' column matches this topic ID
+          queryBuilder = queryBuilder.eq("topic_id", topicData.id)
+        } else {
+          // If topic doesn't exist, return nothing
+          setArticles([])
+          setLoading(false)
+          return
+        }
       }
 
-      if (data) {
+      const { data, error } = await queryBuilder
+
+      if (error) {
+        console.error("Feed fetch error:", error.message)
+      } else if (data) {
         const mapped: Article[] = data.map((a: any) => ({
           id: String(a.id),
           author: a.profiles?.full_name || "Anonymous",
@@ -63,52 +101,28 @@ export default function Feed({ activeTab }: Props) {
           date: new Date(a.created_at).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
-            year: "numeric",
           }),
-          claps: a.claps_count >= 1000
-            ? `${(a.claps_count / 1000).toFixed(1)}K`
-            : String(a.claps_count),
-          comments: a.comments_count,
-          readTime: a.read_time,
+          claps: String(a.claps_count || 0),
+          comments: a.comments_count || 0,
+          readTime: a.read_time || "5 min read",
           body: "",
           coverImage: a.cover_image || "",
           views_count: a.views_count || 0,
         }))
-
         setArticles(mapped)
       }
       setLoading(false)
     }
 
     fetchArticles()
-  }, [activeTab])
+  }, [activeTab, activeTopic])
 
-  const filtered = query.trim()
-    ? articles.filter(
-        (article) =>
-          article.title.toLowerCase().includes(query.toLowerCase()) ||
-          article.subtitle.toLowerCase().includes(query.toLowerCase()) ||
-          article.author.toLowerCase().includes(query.toLowerCase()) ||
-          article.publication.toLowerCase().includes(query.toLowerCase())
-      )
+  // Local Search filtering
+  const filtered = searchKeyword.trim()
+    ? articles.filter(art => art.title.toLowerCase().includes(searchKeyword.toLowerCase()))
     : articles
 
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-6 py-8">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex gap-4 animate-pulse">
-            <div className="flex-1 flex flex-col gap-3">
-              <div className="h-3 bg-stone-200 dark:bg-stone-800 rounded w-1/4" />
-              <div className="h-5 bg-stone-200 dark:bg-stone-800 rounded w-3/4" />
-              <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-1/2" />
-            </div>
-            <div className="w-24 h-20 bg-stone-200 dark:bg-stone-800 rounded-lg shrink-0" />
-          </div>
-        ))}
-      </div>
-    )
-  }
+  if (loading) return <div className="py-10 animate-pulse text-stone-400">Loading stories...</div>
 
   return (
     <div className="flex flex-col">
@@ -117,17 +131,8 @@ export default function Feed({ activeTab }: Props) {
           <ArticleCard key={article.id} article={article} />
         ))
       ) : (
-        <div className="text-center py-16">
-          <p className="text-4xl mb-4">
-            {activeTab === "featured" ? "⭐" : "🔍"}
-          </p>
-          <p className="text-stone-500 dark:text-stone-400 font-medium">
-            {query
-              ? `No results for "${query}"`
-              : activeTab === "featured"
-              ? "No featured articles yet — start clapping on stories!"
-              : "No articles yet"}
-          </p>
+        <div className="text-center py-20 text-stone-500">
+          No articles found in "{activeTopic.replace(/-/g, " ")}"
         </div>
       )}
     </div>

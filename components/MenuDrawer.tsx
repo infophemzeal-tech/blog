@@ -7,12 +7,20 @@ import { useAuth } from "./AuthProvider"
 type Props = {
   isOpen: boolean
   onClose: () => void
+  isAdmin: boolean // Added the missing prop to match Navbar call
 }
 
 const FOLLOWING = [
   { label: "Satoshi App", initial: "S", color: "bg-orange-500" },
   { label: "Orbital7", initial: "O", color: "bg-stone-800" },
 ]
+
+// --- Added Admin Icon ---
+const AdminIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+)
 
 const HomeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -68,7 +76,17 @@ const PlusIcon = () => (
     <path d="M12 5v14M5 12h14"/>
   </svg>
 )
+const InfoIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+  </svg>
+)
 
+const ShieldIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+)
 const DashboardIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -86,7 +104,7 @@ const SignOutIcon = () => (
   </svg>
 )
 
-export default function MenuDrawer({ isOpen, onClose }: Props) {
+export default function MenuDrawer({ isOpen, onClose, isAdmin }: Props) {
   const { user } = useAuth()
   const router = useRouter()
 
@@ -113,14 +131,14 @@ export default function MenuDrawer({ isOpen, onClose }: Props) {
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 dark:bg-black/50 z-40"
+          className="fixed inset-0 bg-black/20 dark:bg-black/50 z-40 transition-opacity"
           onClick={onClose}
         />
       )}
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 left-0 h-full w-56 bg-white dark:bg-stone-950 z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-56 bg-white dark:bg-stone-950 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -130,7 +148,6 @@ export default function MenuDrawer({ isOpen, onClose }: Props) {
           <div className="flex flex-col">
             {[
               { label: "Home", href: "/", icon: <HomeIcon /> },
-              { label: "Library", href: user ? "/dashboard" : "/auth/signin", icon: <LibraryIcon /> },
               { label: "Profile", href: user ? "/dashboard" : "/auth/signin", icon: <ProfileIcon /> },
               { label: "Stories", href: user ? "/dashboard" : "/auth/signin", icon: <StoriesIcon /> },
               { label: "Stats", href: user ? "/dashboard/stats" : "/auth/signin", icon: <StatsIcon /> },
@@ -163,18 +180,19 @@ export default function MenuDrawer({ isOpen, onClose }: Props) {
               </span>
             </button>
 
-            {/* Dashboard — only if logged in */}
-            {user && (
+      
+            {/* Admin Console - Mobile (Added Feature) */}
+            {isAdmin && (
               <Link
-                href="/dashboard"
+                href="/dashboard/admin"
                 onClick={onClose}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white transition-colors group"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors group mt-2"
               >
-                <span className="shrink-0 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">
-                  <DashboardIcon />
+                <span className="shrink-0">
+                  <AdminIcon />
                 </span>
-                <span className="text-sm font-medium text-stone-800 dark:text-stone-200">
-                  Dashboard
+                <span className="text-sm font-bold">
+                  Admin Console
                 </span>
               </Link>
             )}
@@ -185,18 +203,25 @@ export default function MenuDrawer({ isOpen, onClose }: Props) {
           {/* Auth section */}
           {user ? (
             <div className="flex flex-col gap-0.5">
-
-              {/* User info */}
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${isAdmin ? 'bg-blue-600' : 'bg-green-600'}`}>
                   {user.email?.[0].toUpperCase()}
                 </div>
-                <span className="text-sm text-stone-600 dark:text-stone-400 truncate">
-                  {user.email}
-                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs text-stone-600 dark:text-stone-400 truncate">
+                    {user.email}
+                  </span>
+                  {isAdmin && <span className="text-[10px] text-blue-500 font-bold uppercase tracking-tight">Super Admin</span>}
+                </div>
               </div>
-
-              {/* Sign out */}
+<div className="flex flex-col gap-1 mt-4 border-t border-stone-100 dark:border-stone-800 pt-4">
+  <Link href="/terms" onClick={onClose} className="flex items-center gap-3 px-3 py-2 text-stone-400 hover:text-stone-600 transition-colors">
+     <ShieldIcon /> <span className="text-xs">Terms of Service</span>
+  </Link>
+  <Link href="/privacy" onClick={onClose} className="flex items-center gap-3 px-3 py-2 text-stone-400 hover:text-stone-600 transition-colors">
+     <ShieldIcon /> <span className="text-xs">Privacy Policy</span>
+  </Link>
+</div>
               <button
                 onClick={handleSignOut}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer w-full text-left group"
@@ -208,7 +233,6 @@ export default function MenuDrawer({ isOpen, onClose }: Props) {
                   Sign out
                 </span>
               </button>
-
             </div>
           ) : (
             <div className="flex flex-col gap-2 px-3">
@@ -231,7 +255,7 @@ export default function MenuDrawer({ isOpen, onClose }: Props) {
 
           <div className="border-t border-stone-100 dark:border-stone-800 mx-2" />
 
-          {/* Following section — only if logged in */}
+          {/* Following section */}
           {user && (
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-3 px-3 py-2">
@@ -256,15 +280,6 @@ export default function MenuDrawer({ isOpen, onClose }: Props) {
                   </span>
                 </button>
               ))}
-
-              <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer w-full text-left group">
-                <span className="shrink-0 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-white transition-colors">
-                  <PlusIcon />
-                </span>
-                <span className="text-sm text-stone-500 dark:text-stone-400 group-hover:text-stone-700 dark:group-hover:text-white transition-colors leading-tight">
-                  Find writers to follow
-                </span>
-              </button>
             </div>
           )}
 

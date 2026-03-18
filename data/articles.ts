@@ -12,5 +12,8 @@ export type Article = {
   readTime: string
   body: string
   coverImage?: string
-  views_count?: number  // Add this line
+  views_count?: number  
+   is_pinned?: boolean;
+  is_deactivated?: boolean;
+  author_id?: string;
 }

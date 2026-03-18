@@ -1,152 +1,257 @@
-const STAFF_PICKS = [
-  {
-    id: 1,
-    publication: "Fossils et...",
-    author: "Alejandro Izquierdo López",
-    title: "Stop it! Animals don't evolve into crabs",
-    date: "Feb 22",
-  },
-  {
-    id: 2,
-    publication: "The Medium Blog",
-    author: "Medium Staff",
-    title: "How Medium moderates its open platform in the AI era",
-    date: "4d ago",
-  },
-  {
-    id: 3,
-    publication: "Fourth Wave",
-    author: "Vilma G. Reynoso",
-    title: "Why Women's History Month Matters for All Women",
-    date: "2d ago",
-  },
-]
+"use client"
 
-const TOPICS = [
-  "Data Science",
-  "Self Improvement",
-  "Technology",
-  "Writing",
-  "Relationships",
-  "Politics",
-  "Productivity",
-]
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
+import Link from "next/link"
 
-const WHO_TO_FOLLOW = [
-  {
-    id: 1,
-    name: "Adham Khaled",
-    initial: "A",
-    bio: "9x Boosted Writer | Embedded Systems...",
-  },
-  {
-    id: 2,
-    name: "Entrepreneurship Handbook",
-    initial: "E",
-    bio: "How to succeed in entrepreneurship feat...",
-  },
-  {
-    id: 3,
-    name: "Will Lockett",
-    initial: "W",
-    bio: "Independent journalist covering global politics...",
-  },
-]
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const FOOTER_LINKS = [
-  "Help", "Status", "About", "Careers",
-  "Press", "Blog", "Privacy", "Rules", "Terms",
-]
+interface SidebarProps {
+  activeTopic: string
+  onTopicChange: (slug: string) => void
+}
+
+type StaffPick = {
+  id: number
+  publication: string
+  author: string
+  title: string
+  date: string
+}
+
+type TopicCategory = {
+  id: number
+  name: string
+  topics: { id: number; name: string }[]
+}
+
+type Person = {
+  id: number
+  name: string
+  initial: string
+  bio: string
+}
+
+// ─── Helper Logic ─────────────────────────────────────────────────────────────
+
+const slugify = (text: string) => text.toLowerCase().trim().replace(/\s+/g, "-")
+
+// ─── Staff Picks ──────────────────────────────────────────────────────────────
 
 function StaffPicks() {
+  const [picks, setPicks] = useState<StaffPick[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchPicks() {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("staff_picks")
+        .select("id, publication, author, title, date")
+        .order("id", { ascending: true })
+        .limit(3)
+      if (error) console.error("StaffPicks error:", error)
+      else setPicks(data || [])
+      setLoading(false)
+    }
+    fetchPicks()
+  }, [])
+
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-base font-bold text-stone-900 dark:text-white">Staff Picks</h3>
-      {STAFF_PICKS.map((pick) => (
-        <div key={pick.id} className="flex flex-col gap-1 cursor-pointer group">
-          <p className="text-xs text-stone-400 dark:text-stone-500">
-            In <span className="text-stone-600 dark:text-stone-400">{pick.publication}</span>{" "}
-            by {pick.author}
-          </p>
-         <p className="font-serif text-sm font-medium text-stone-900 dark:text-white leading-snug group-hover:underline">
-  {pick.title}
-</p>
-          <p className="text-xs text-stone-400 dark:text-stone-500">{pick.date}</p>
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-12 w-full bg-stone-100 dark:bg-stone-800 animate-pulse rounded-lg" />
+          ))}
         </div>
-      ))}
-      <button className="text-sm text-green-600 hover:text-green-800 dark:text-green-500 dark:hover:text-green-400 transition-colors cursor-pointer text-left">
-        See the full list
-      </button>
+      ) : (
+        picks.map((pick) => (
+          <div key={pick.id} className="flex flex-col gap-1 cursor-pointer group">
+            <p className="text-xs text-stone-400 dark:text-stone-500">
+              In <span className="text-stone-600 dark:text-stone-400">{pick.publication}</span>{" "}
+              by {pick.author}
+            </p>
+            <p className="font-serif text-sm font-medium text-stone-900 dark:text-white leading-snug group-hover:underline">
+              {pick.title}
+            </p>
+            <p className="text-xs text-stone-400 dark:text-stone-500">{pick.date}</p>
+          </div>
+        ))
+      )}
     </div>
   )
 }
 
-function RecommendedTopics() {
+// ─── Recommended Topics ───────────────────────────────────────────────────────
+
+function RecommendedTopics({ activeTopic, onTopicChange }: SidebarProps) {
+  const [categories, setCategories] = useState<TopicCategory[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchTopics() {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("topic_categories")
+        .select("id, name, topics(id, name)")
+        .order("id", { ascending: true })
+      if (error) console.error("RecommendedTopics error:", error)
+      else setCategories((data as TopicCategory[]) || [])
+      setLoading(false)
+    }
+    fetchTopics()
+  }, [])
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <h3 className="text-base font-bold text-stone-900 dark:text-white">Recommended topics</h3>
-      <div className="flex flex-wrap gap-2">
-        {TOPICS.map((topic) => (
-          <button
-            key={topic}
-            className="px-4 py-2 rounded-full bg-stone-100 dark:bg-stone-800 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors cursor-pointer"
-          >
-            {topic}
-          </button>
-        ))}
-      </div>
-      <button className="text-sm text-green-600 hover:text-green-800 dark:text-green-500 dark:hover:text-green-400 transition-colors cursor-pointer text-left">
-        See more topics
-      </button>
+      {loading ? (
+        <div className="flex flex-wrap gap-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-6 w-16 bg-stone-100 dark:bg-stone-800 animate-pulse rounded-full" />
+          ))}
+        </div>
+      ) : (
+        categories.map((category) => (
+          <div key={category.id} className="flex flex-col gap-2">
+            <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">
+              {category.name}:
+            </p>
+            <div className="flex flex-wrap gap-x-1 gap-y-1">
+              {(category.topics || []).map((topic, index) => {
+                const topicSlug = slugify(topic.name)
+                const isActive = activeTopic === topicSlug
+
+                return (
+                  <span key={topic.id} className="text-sm">
+                    <button
+                      onClick={() => onTopicChange(topicSlug)}
+                      className={`transition-colors cursor-pointer text-left ${
+                        isActive
+                          ? "text-green-600 font-bold underline underline-offset-4"
+                          : "text-stone-500 dark:text-stone-400 hover:text-green-600 dark:hover:text-green-400"
+                      }`}
+                    >
+                      {topic.name}
+                    </button>
+                    {index < (category.topics || []).length - 1 && (
+                      <span className="text-stone-300 dark:text-stone-600">, </span>
+                    )}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        ))
+      )}
     </div>
   )
 }
+
+// ─── Who To Follow ────────────────────────────────────────────────────────────
 
 function WhoToFollow() {
+  const [people, setPeople] = useState<Person[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchPeople() {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name, bio, full_name") // Include full_name as fallback
+        .limit(3)
+      if (error) {
+        console.error("WhoToFollow error:", error)
+      } else {
+        setPeople(
+          (data || []).map((p) => ({
+            ...p,
+            id: p.id,
+            name: p.name || p.full_name || "Writer",
+            initial: (p.name || p.full_name || "?")[0].toUpperCase(),
+            bio: p.bio || "Storyteller on GistPadi",
+          }))
+        )
+      }
+      setLoading(false)
+    }
+    fetchPeople()
+  }, [])
+
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-base font-bold text-stone-900 dark:text-white">Who to follow</h3>
-      {WHO_TO_FOLLOW.map((person) => (
-        <div key={person.id} className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-stone-800 dark:bg-stone-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
-              {person.initial}
-            </div>
-            <div className="flex flex-col">
-              <p className="text-sm font-medium text-stone-900 dark:text-white">{person.name}</p>
-              <p className="text-xs text-stone-400 dark:text-stone-500 line-clamp-1">{person.bio}</p>
-            </div>
-          </div>
-          <button className="shrink-0 px-4 py-1.5 rounded-full border border-stone-900 dark:border-stone-400 text-sm text-stone-900 dark:text-stone-300 hover:bg-stone-900 dark:hover:bg-stone-700 hover:text-white transition-colors cursor-pointer">
-            Follow
-          </button>
+      {loading ? (
+         <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-10 w-full bg-stone-100 dark:bg-stone-800 animate-pulse rounded-full" />
+          ))}
         </div>
-      ))}
-      <button className="text-sm text-green-600 hover:text-green-800 dark:text-green-500 dark:hover:text-green-400 transition-colors cursor-pointer text-left">
-        See more suggestions
-      </button>
+      ) : (
+        people.map((person) => (
+          <div key={person.id} className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-9 h-9 rounded-full bg-stone-800 dark:bg-stone-600 flex items-center justify-center text-white text-sm font-medium shrink-0 shadow-sm">
+                {person.initial}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <p className="text-sm font-bold text-stone-900 dark:text-white truncate">{person.name}</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500 line-clamp-1">{person.bio}</p>
+              </div>
+            </div>
+            <button className="shrink-0 px-4 py-1.5 rounded-full border border-stone-900 dark:border-stone-400 text-[12px] font-bold text-stone-900 dark:text-stone-300 hover:bg-stone-900 dark:hover:bg-stone-700 hover:text-white transition-colors cursor-pointer">
+              Follow
+            </button>
+          </div>
+        ))
+      )}
     </div>
   )
 }
+
+// ─── Footer Links (Pro Static Version) ──────────────────────────────────────
 
 function FooterLinks() {
+  const links = [
+    { label: "Help", href: "/about" },
+    { label: "Status", href: "#" },
+    { label: "About", href: "/about" },
+    { label: "Careers", href: "#" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+  ]
+
   return (
-    <div className="flex flex-wrap gap-x-3 gap-y-1">
-      {FOOTER_LINKS.map((link) => (
-        <a key={link} href="#" className="text-xs text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-400 transition-colors">
-          {link}
-        </a>
-      ))}
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
+        {links.map((link, index) => (
+          <Link
+            key={index}
+            href={link.href}
+            className="text-xs text-stone-400 dark:text-stone-600 hover:text-stone-900 dark:hover:text-stone-400 transition-colors font-sans"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
+      <p className="text-[10px] text-stone-300 dark:text-stone-700 font-sans uppercase tracking-widest font-medium">
+        © {new Date().getFullYear()} GistPadi
+      </p>
     </div>
   )
 }
 
-export default function Sidebar() {
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+
+export default function Sidebar({ activeTopic, onTopicChange }: SidebarProps) {
   return (
     <aside className="flex flex-col gap-8 sticky top-4">
       <StaffPicks />
       <div className="border-t border-stone-100 dark:border-stone-800" />
-      <RecommendedTopics />
+      <RecommendedTopics activeTopic={activeTopic} onTopicChange={onTopicChange} />
       <div className="border-t border-stone-100 dark:border-stone-800" />
       <WhoToFollow />
       <div className="border-t border-stone-100 dark:border-stone-800" />
