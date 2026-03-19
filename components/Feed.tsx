@@ -5,7 +5,22 @@ import { useSearch } from "./SearchProvider"
 import ArticleCard from "./ArticleCard"
 import { createClient } from "../lib/supabase/client"
 import type { Article } from "../data/articles"
+const formatGistDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+  const monthName = date.toLocaleDateString("en-US", { month: "short" });
+  const day = date.getDate();
+  const year = date.getFullYear();
 
+  // Ordinal logic (1st, 2nd, 3rd, etc.)
+  const getOrdinal = (n: number) => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}, ${year} - gistpadi.ng`;
+};
 type Props = {
   activeTab: "for-you" | "featured"
   activeTopic: string
@@ -91,24 +106,22 @@ if (activeTab === "featured") {
         console.error("Feed fetch error:", error.message)
       } else if (data) {
         const mapped: Article[] = data.map((a: any) => ({
-          id: String(a.id),
-          author: a.profiles?.full_name || "Anonymous",
-          authorInitial: (a.profiles?.full_name?.[0] || "A").toUpperCase(),
-          publication: a.publication || "",
-          slug: a.slug,
-          title: a.title,
-          subtitle: a.subtitle || "",
-          date: new Date(a.created_at).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          }),
-          claps: String(a.claps_count || 0),
-          comments: a.comments_count || 0,
-          readTime: a.read_time || "5 min read",
-          body: "",
-          coverImage: a.cover_image || "",
-          views_count: a.views_count || 0,
-        }))
+  id: String(a.id),
+  author: a.profiles?.full_name || "Anonymous",
+  authorInitial: (a.profiles?.full_name?.[0] || "A").toUpperCase(),
+  publication: a.publication || "",
+  slug: a.slug,
+  title: a.title,
+  subtitle: a.subtitle || "",
+  // --- UPDATED DATE LOGIC ---
+  date: formatGistDate(a.created_at), 
+  claps: String(a.claps_count || 0),
+  comments: a.comments_count || 0,
+  readTime: a.read_time || "5 min read",
+  body: "",
+  coverImage: a.cover_image || "",
+  views_count: a.views_count || 0,
+}))
         setArticles(mapped)
       }
       setLoading(false)

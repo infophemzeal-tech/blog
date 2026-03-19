@@ -94,9 +94,9 @@ export default function ArticleCard({ article }: ArticleCardProps) {
           </p>
 
           {/* Bottom row */}
-          <div className="flex items-center gap-3 text-xs text-stone-400 dark:text-stone-500 mt-1 flex-wrap">
+          <div className="flex items-center gap-3 text-xs text-stone-400 dark:text-stone-500 mt-1 font-medium flex-wrap">
              {/* Date */}
-            <span>{article.date}</span>
+            <span className="whitespace-nowrap">{article.date}</span>
             
             {/* Claps */}
             <div className="flex items-center gap-1">
