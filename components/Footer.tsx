@@ -10,7 +10,7 @@ export default function Footer() {
 
           {/* Brand */}
           <span className="font-serif italic text-2xl font-bold text-stone-900 dark:text-white">
-            GistPadi
+            Nairaly
           </span>
 
           {/* Nav links */}
@@ -38,7 +38,7 @@ export default function Footer() {
 
         {/* Bottom row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-400 dark:text-stone-500">
-          <p>© {new Date().getFullYear()} GistPadi. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Nairaly. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link href="#" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
               Privacy
@@ -46,7 +46,7 @@ export default function Footer() {
             <Link href="#" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
               Terms
             </Link>
-            <a href="mailto:support@gistpadi.com" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
+            <a href="mailto:support@Nairaly.com" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
               Support
             </a>
           </div>
