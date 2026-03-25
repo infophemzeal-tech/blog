@@ -70,14 +70,7 @@ export default async function Page({ params }: Props) {
   // 1. Fetch Main Article Data (Checking for Moderation)
   const { data: article } = await supabase
     .from("articles")
-    .select(`
-      *,
-      profiles (
-        full_name,
-        avatar_url,
-        bio
-      )
-    `)
+     .select("*")
     .eq("slug", slug)
     .eq("published", true)
     .eq("is_deactivated", false) // IMPORTANT: Block Moderated Content

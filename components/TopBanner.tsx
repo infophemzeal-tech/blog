@@ -30,7 +30,7 @@ export default function TopBanner() {
     <div className="w-full bg-amber-50 dark:bg-stone-900 border-b border-amber-200 dark:border-stone-700 px-4 py-2 flex items-center justify-center text-sm relative animate-in fade-in slide-in-from-top-4 duration-500">
       <span className="mr-2 hidden sm:inline">⭐</span>
       <p className="text-stone-700 dark:text-stone-300 text-center text-[11px] sm:text-sm font-sans">
-        Get unlimited access to the best of Medium for less than $1/week.{" "}
+        Get unlimited access to the best of Nairaly for less than $1/week.{" "}
         <Link href="/auth/signup" className="underline font-bold text-stone-900 dark:text-white">
           Become a member
         </Link>

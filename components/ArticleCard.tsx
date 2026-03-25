@@ -112,10 +112,11 @@ export default function ArticleCard({ article }: ArticleCardProps) {
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span>{(article.views_count || 0) >= 1000
-                ? `${((article.views_count || 0) / 1000).toFixed(1)}K`
-                : article.views_count || 0}
-              </span>
+              <span>
+        {Number(article.views_count) >= 1000 
+          ? `${(Number(article.views_count) / 1000).toFixed(1)}K` 
+          : article.views_count || 0}
+    </span>
             </div>
 
             {/* Icons Buttons */}

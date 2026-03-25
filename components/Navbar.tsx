@@ -94,7 +94,7 @@ export default function Navbar() {
             </button>
             <Link href="/">
               <span className="font-serif italic text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
-                Medium
+                Nairaly
               </span>
             </Link>
           </div>
@@ -204,7 +204,7 @@ export default function Navbar() {
               </svg>
               <input
                 type="text"
-                placeholder="Search Medium"
+                placeholder="Search Nairaly"
                 value={search}
                 onChange={(e) => handleChange(e.target.value)}
                 className="bg-transparent text-sm text-stone-700 dark:text-stone-300 outline-none w-full placeholder:text-stone-400"

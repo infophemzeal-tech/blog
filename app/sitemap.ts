@@ -7,7 +7,7 @@ export const revalidate = 3600; // Revalidate at most every hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient()
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gistpadi.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nairaly.com'
 
   // 1. Fetch all Published Articles
   const { data: articles } = await supabase

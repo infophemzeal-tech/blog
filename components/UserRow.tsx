@@ -21,7 +21,7 @@ export default function UserRow({ userData }: { userData: any }) {
     confirmButtonColor: '#2563eb', 
     cancelButtonColor: '#78716c',
    customClass: {
-  title: 'font-serif text-lg font-bold', // Medium-style serif title
+  title: 'font-serif text-lg font-bold', // Nairaly-style serif title
   htmlContainer: 'font-sans text-xs opacity-70', // Clean sans text
   confirmButton: 'font-sans text-xs px-4 py-2 rounded-lg font-bold',
 }

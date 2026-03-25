@@ -1,37 +1,33 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 
-const supabase = createClient()
+export default function ViewTracker({ articleId }: { articleId: number | string }) {
+  const hasTracked = useRef(false)
+  const supabase = createClient()
 
-type Props = {
-  articleId: string
-}
-
-export default function ViewTracker({ articleId }: Props) {
   useEffect(() => {
-    const track = async () => {
-      const key = `viewed_${articleId}`
-      if (sessionStorage.getItem(key)) {
-        console.log("⛔ Already viewed:", articleId)
-        return
-      }
+    // 1. Prevent double-counting in Development mode or fast-clicking
+    if (hasTracked.current) return;
 
-      console.log("👁 Tracking view for:", articleId)
-      sessionStorage.setItem(key, "1")
+    // Inside components/ViewTracker.tsx
+const recordView = async () => {
+  try {
+    await supabase.rpc('increment_views', { 
+        target_article_id: Number(articleId) // Must match the SQL parameter name exactly
+    });
+    hasTracked.current = true;
+  } catch (err) {
+    console.error("Analytics Error:", err);
+  }
+};
 
-      const { error } = await supabase.rpc("increment_views", { article_id: articleId })
+    // We delay the track by 1 second to ensure it's a real read, not a bot/accident
+    const timer = setTimeout(recordView, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [articleId, supabase]);
 
-      if (error) {
-        console.error("❌ View tracking error:", error.message)
-      } else {
-        console.log("✅ View tracked successfully!")
-      }
-    }
-
-    track()
-  }, [articleId])
-
-  return null
+  return null; // Stays invisible
 }

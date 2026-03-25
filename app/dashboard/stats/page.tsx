@@ -108,7 +108,7 @@ export default async function StatsPage() {
     // Calculate aggregated stats
     const totalClaps = articles?.reduce((sum, a) => sum + (a.claps_count || 0), 0) ?? 0
     const totalComments = articles?.reduce((sum, a) => sum + (a.comments_count || 0), 0) ?? 0
-    const totalViews = articles?.reduce((sum, a) => sum + (a.views_count || 0), 0) ?? 0
+    const totalViews = articles?.reduce((sum, a) => sum + (a.views_count || 0), 0) ?? 0;
     const totalArticles = articles?.length ?? 0
     const publishedArticles = articles?.filter((a) => a.published).length ?? 0
 
