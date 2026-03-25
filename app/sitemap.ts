@@ -29,8 +29,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8, // High priority for content
   }))
 
-  // 4. Map Topics to Sitemap Format
-  const topicEntries: MetadataRoute.Sitemap = (topics || []).map((topic) => ({
+// 4. Map Topics to Sitemap Format
+const topicEntries: MetadataRoute.Sitemap = (topics || [])
+  .filter((topic) => topic.slug && topic.slug !== 'null') // ← ADD THIS LINE
+  .map((topic) => ({
     url: `${baseUrl}/?topic=${topic.slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
