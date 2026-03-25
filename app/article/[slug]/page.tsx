@@ -153,7 +153,9 @@ export default async function Page({ params }: Props) {
             </span>
           </div>
         )}
-        
+         <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900 dark:text-white leading-[1.1] mb-6 tracking-tight">
+          {article.title}
+        </h1>
         {article.cover_image && (
           <div className="relative aspect-[16/9] overflow-hidden mb-12 -mx-4 sm:mx-0 sm:rounded-2xl w-[calc(100%+2rem)] sm:w-full bg-stone-50 dark:bg-stone-900 border border-stone-100 dark:border-stone-800 shadow-sm">
             <Image
@@ -166,9 +168,7 @@ export default async function Page({ params }: Props) {
           </div>
         )}
         
-        <h1 className="font-serif text-3xl sm:text-5xl font-bold text-stone-900 dark:text-white leading-[1.1] mb-6 tracking-tight">
-          {article.title}
-        </h1>
+       
 
         {article.subtitle && (
           <p className="font-serif text-lg sm:text-2xl text-stone-500 dark:text-stone-400 leading-relaxed mb-10">
