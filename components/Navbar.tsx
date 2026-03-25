@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useRef, useCallback } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useTheme } from "./ThemeProvider"
 import { useSearch } from "./SearchProvider"
@@ -9,209 +9,373 @@ import { useAuth } from "./AuthProvider"
 import { createClient } from "@/lib/supabase/client"
 import MenuDrawer from "./MenuDrawer"
 
+const SearchIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+  </svg>
+)
+
+const MenuIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12h18M3 6h12M3 18h9" />
+  </svg>
+)
+
+const WriteIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+)
+
+const SunIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+  </svg>
+)
+
+const MoonIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+  </svg>
+)
+
+const XIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6 6 18M6 6l12 12" />
+  </svg>
+)
+
 export default function Navbar() {
-  // --- INTERNAL STATE ---
   const [search, setSearch] = useState("")
   const [searchOpen, setSearchOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [userInitial, setUserInitial] = useState("")
 
-  // --- HOOKS ---
+  const mobileSearchRef = useRef<HTMLInputElement>(null)
+  const desktopSearchRef = useRef<HTMLInputElement>(null)
+  const pathname = usePathname()
+
   const { theme, toggleTheme } = useTheme()
   const { setQuery } = useSearch()
   const { user } = useAuth()
   const router = useRouter()
   const supabase = createClient()
 
-  // --- ADMIN CHECK ---
   useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  // Guard navigation wipes from erasing typed input when entering a genuine "/search" routing parameter view
+  useEffect(() => {
+    if (!pathname.startsWith("/search")) {
+      setSearchOpen(false)
+      setSearch("")
+      setQuery("")
+    }
+  }, [pathname, setQuery])
+
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => mobileSearchRef.current?.focus(), 50)
+    }
+  }, [searchOpen])
+
+  useEffect(() => {
+    let mounted = true
+
     if (!user) {
       setIsAdmin(false)
+      setUserInitial("")
       return
     }
 
-    const checkAdminStatus = async () => {
+    setUserInitial(user.email?.[0]?.toUpperCase() ?? "U")
+    
+    const checkAdmin = async () => {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, full_name")
           .eq("id", user.id)
           .single()
-
-        if (data?.role === "super_admin") {
-          setIsAdmin(true)
+          
+        if (mounted) {
+          if (data?.role === "super_admin") setIsAdmin(true)
+          if (data?.full_name) setUserInitial(data.full_name[0].toUpperCase())
         }
       } catch (err) {
-        console.error("Error checking admin status:", err)
+        console.error("Admin check failed:", err)
+      }
+    }
+    checkAdmin()
+
+    return () => {
+      mounted = false
+    }
+  }, [user, supabase])
+
+  // Responsive Shortcut Focus Handler
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // isContentEditable checks editable states for span elements aside regular inputs
+      const activeTag = (e.target as HTMLElement).tagName
+      const isEditable = (e.target as HTMLElement).isContentEditable
+
+      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(activeTag) && !isEditable) {
+        e.preventDefault()
+
+        // Responsive toggling behavior for focuses on Desktop viewport screens:
+        if (window.innerWidth >= 640) { // SM and upwards Tailwind scope breakpoint
+          desktopSearchRef.current?.focus()
+        } else {
+          setSearchOpen(true)
+        }
+      }
+
+      if (e.key === "Escape") {
+        setSearchOpen(false)
+        setSearch("")
+        setQuery("")
+        desktopSearchRef.current?.blur()
+        mobileSearchRef.current?.blur()
       }
     }
 
-    checkAdminStatus()
-  }, [user, supabase])
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [setQuery])
 
-  // --- HANDLERS ---
-  const handleChange = (value: string) => {
+  const handleChange = useCallback((value: string) => {
     setSearch(value)
-    setQuery(value) // Updates global feed filter
-  }
+    setQuery(value)
+  }, [setQuery])
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     if (search.trim()) {
       router.push(`/search?q=${encodeURIComponent(search.trim())}`)
       setSearchOpen(false)
+      setSearch("")
+      setQuery("")
     }
-  }
+  }, [search, router, setQuery])
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut()
     setIsAdmin(false)
     router.push("/")
     router.refresh()
-  }
+  }, [supabase, router])
+
+  const clearSearch = useCallback(() => {
+    setSearch("")
+    setQuery("")
+    if (window.innerWidth >= 640) {
+      desktopSearchRef.current?.focus()
+    } else {
+      mobileSearchRef.current?.focus()
+    }
+  }, [setQuery])
 
   return (
     <>
-      {/* Mobile Menu Drawer integration */}
-      <MenuDrawer 
-        isOpen={menuOpen} 
-        onClose={() => setMenuOpen(false)} 
-        isAdmin={isAdmin} 
-      />
+      <MenuDrawer isOpen={menuOpen} onClose={() => setMenuOpen(false)} isAdmin={isAdmin} />
 
-      <nav className="w-full border-b border-stone-200 dark:border-stone-800 px-4 py-3 sticky top-0 bg-white/90 dark:bg-stone-950/90 backdrop-blur-md z-40">
+      <nav className={`
+        w-full sticky top-0 z-40 px-4 py-3
+        bg-white/95 dark:bg-stone-950/95
+        backdrop-blur-md
+        border-b border-stone-200 dark:border-stone-800
+        transition-shadow duration-200
+        ${scrolled ? "shadow-[0_1px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_16px_rgba(0,0,0,0.4)]" : ""}
+      `}>
         <div className="max-w-7xl mx-auto flex items-center gap-3">
 
-          {/* LEFT: Menu Toggle & Logo */}
-          <div className="flex items-center gap-3 shrink-0">
+          {/* LEFT: Menu + Logo */}
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => setMenuOpen(true)}
-              className="text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
+              aria-label="Open menu"
+              className="p-1.5 -ml-1.5 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all duration-150"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M3 12h18M3 6h18M3 18h18"/>
-              </svg>
+              <MenuIcon />
             </button>
-            <Link href="/">
-              <span className="font-serif italic text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
+            <Link href="/" className="group">
+              <span className="font-serif italic text-[1.4rem] font-bold tracking-tight text-green-600 dark:text-white group-hover:text-green-500 dark:group-hover:text-green-400 transition-colors duration-150">
                 Nairaly
               </span>
             </Link>
           </div>
 
           {/* CENTER: Desktop Search */}
-          <form onSubmit={handleSearchSubmit} className="flex-1 max-w-sm hidden sm:block ml-4">
-            <div className="flex items-center gap-2 bg-stone-100 dark:bg-stone-800 rounded-full px-4 py-2 border border-transparent focus-within:border-stone-200 dark:focus-within:border-stone-700 transition-all">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-stone-400">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
+          <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xs hidden sm:block ml-3">
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 text-stone-400 pointer-events-none">
+                <SearchIcon />
+              </span>
               <input
+                ref={desktopSearchRef}
                 type="text"
-                placeholder="Search"
+                placeholder="Search Nairaly"
                 value={search}
                 onChange={(e) => handleChange(e.target.value)}
-                className="bg-transparent text-sm text-stone-700 dark:text-stone-300 outline-none w-full placeholder:text-stone-400"
+                className="
+                  w-full pl-9 pr-10 py-2 rounded-full text-sm
+                  bg-stone-100 dark:bg-stone-800
+                  text-stone-700 dark:text-stone-200
+                  placeholder:text-stone-400 dark:placeholder:text-stone-500
+                  border border-transparent
+                  focus:outline-none focus:border-stone-300 dark:focus:border-stone-600
+                  focus:bg-white dark:focus:bg-stone-900
+                  transition-all duration-200
+                "
               />
+              {search ? (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-3 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+                >
+                  <XIcon />
+                </button>
+              ) : (
+                <kbd className="absolute right-3 hidden lg:flex items-center justify-center text-[10px] font-medium text-stone-400 dark:text-stone-500 bg-stone-200 dark:bg-stone-700 rounded px-1.5 py-0.5 pointer-events-none">
+                  /
+                </kbd>
+              )}
             </div>
           </form>
 
-          {/* RIGHT: Actions & User */}
-          <div className="ml-auto flex items-center gap-2 sm:gap-4 shrink-0">
-            
-            {/* Mobile Search Toggle */}
+          {/* RIGHT: Actions */}
+          <div className="ml-auto flex items-center gap-1 sm:gap-2 shrink-0">
+
+            {/* Mobile search toggle */}
             <button
               type="button"
-              className="sm:hidden text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
-              onClick={() => setSearchOpen(!searchOpen)}
+              aria-label="Search"
+              onClick={() => setSearchOpen((v) => !v)}
+              className="sm:hidden p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
+              <SearchIcon />
             </button>
 
-            {/* Dark Mode Toggle */}
+            {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
+              aria-label="Toggle theme"
+              className="p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all duration-150"
             >
-              {theme === "dark" ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-              )}
+              {theme === "dark" ? <SunIcon /> : <MoonIcon />}
             </button>
 
             {user ? (
-              <div className="flex items-center gap-3">
-                {/* Admin Link (Desktop Only) */}
+              <>
                 {isAdmin && (
                   <Link
                     href="/dashboard/admin"
-                    className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:opacity-80 transition-opacity bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded"
+                    className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-extrabold tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors border border-blue-100 dark:border-blue-800"
                   >
-                    ADMIN
+                    ⚡ ADMIN
                   </Link>
                 )}
 
                 <Link
                   href="/dashboard/write"
-                  className="hidden md:flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
+                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all duration-150"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <WriteIcon />
                   Write
                 </Link>
 
                 <button
                   onClick={handleSignOut}
-                  className="hidden md:block text-sm text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors cursor-pointer"
+                  className="hidden md:block px-3 py-1.5 text-sm text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
                 >
                   Sign out
                 </button>
 
-                {/* Avatar with Dynamic Color for Admin */}
-                <div className={`relative w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0 shadow-sm ring-1 ring-white dark:ring-stone-900 ${
-                  isAdmin ? 'bg-blue-600 ring-offset-2 ring-blue-100 dark:ring-offset-stone-950' : 'bg-green-600'
-                }`}>
-                  {user.email?.[0].toUpperCase()}
-                  {isAdmin && <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full border border-white dark:border-stone-900 animate-pulse" />}
+                <div
+                  title={user.email || ""}
+                  className={`
+                    relative w-8 h-8 rounded-full
+                    flex items-center justify-center
+                    text-white text-[11px] font-bold
+                    shrink-0 cursor-default select-none shadow-sm
+                    ring-2 ring-white dark:ring-stone-900
+                    ${isAdmin
+                      ? "bg-blue-600 ring-offset-1 ring-offset-blue-100 dark:ring-offset-stone-950"
+                      : "bg-gradient-to-br from-green-500 to-emerald-700"
+                    }
+                  `}
+                >
+                  {userInitial}
+                  {isAdmin && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full border-[1.5px] border-white dark:border-stone-900 animate-pulse" />
+                  )}
                 </div>
-              </div>
+              </>
             ) : (
-              <div className="flex items-center gap-3">
+              <>
                 <Link
                   href="/auth/signin"
-                  className="text-sm text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors hidden md:block"
+                  className="hidden md:block px-3 py-1.5 text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white transition-colors"
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="px-4 py-1.5 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors shadow-sm"
+                  className="px-4 py-1.5 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-semibold hover:bg-green-600 dark:hover:bg-green-500 dark:hover:text-white transition-colors duration-200 shadow-sm"
                 >
                   Get started
                 </Link>
-              </div>
+              </>
             )}
           </div>
         </div>
 
-        {/* MOBILE: Search Expansion */}
+        {/* MOBILE: Expandable Search */}
         {searchOpen && (
-          <form onSubmit={handleSearchSubmit} className="mt-3 sm:hidden animate-in slide-in-from-top duration-200">
-            <div className="flex items-center gap-2 bg-stone-100 dark:bg-stone-800 rounded-full px-4 py-2.5 border border-stone-200 dark:border-stone-700 shadow-inner">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-stone-400">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
-              <input
-                type="text"
-                placeholder="Search Nairaly"
-                value={search}
-                onChange={(e) => handleChange(e.target.value)}
-                className="bg-transparent text-sm text-stone-700 dark:text-stone-300 outline-none w-full placeholder:text-stone-400"
-                autoFocus
-              />
-            </div>
-          </form>
+          <div className="mt-2.5 sm:hidden">
+            <form onSubmit={handleSearchSubmit}>
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 text-stone-400 pointer-events-none">
+                  <SearchIcon />
+                </span>
+                <input
+                  ref={mobileSearchRef}
+                  type="text"
+                  placeholder="Search Nairaly..."
+                  value={search}
+                  onChange={(e) => handleChange(e.target.value)}
+                  className="
+                    w-full pl-9 pr-10 py-2.5 rounded-xl text-sm
+                    bg-stone-100 dark:bg-stone-800
+                    text-stone-800 dark:text-stone-200
+                    placeholder:text-stone-400 dark:placeholder:text-stone-500
+                    border border-stone-200 dark:border-stone-700
+                    focus:outline-none focus:border-green-400 dark:focus:border-green-600
+                    focus:bg-white dark:focus:bg-stone-900
+                    transition-all duration-200
+                  "
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-3 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+                  >
+                    <XIcon />
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
         )}
       </nav>
     </>
