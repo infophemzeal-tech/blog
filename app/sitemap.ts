@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 // 4. Map Topics to Sitemap Format
 const topicEntries: MetadataRoute.Sitemap = (topics || [])
-  .filter((topic) => topic.slug && topic.slug !== 'null') // ← ADD THIS LINE
+  .filter((topic) => topic.slug && topic.slug !== 'null' && topic.slug.trim() !== '')
   .map((topic) => ({
     url: `${baseUrl}/?topic=${topic.slug}`,
     lastModified: new Date(),
