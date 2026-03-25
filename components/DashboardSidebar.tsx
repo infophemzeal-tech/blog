@@ -64,7 +64,7 @@ export default function DashboardSidebar({
         <div className="p-8">
           <Link href="/" className="group flex items-center gap-3">
             <div className="w-9 h-9 bg-stone-900 dark:bg-white rounded-xl flex items-center justify-center text-white dark:text-black font-bold text-xl">G</div>
-            <span className="font-serif italic text-2xl font-bold tracking-tight text-stone-900 dark:text-white">GistPadi</span>
+            <span className="font-serif italic text-2xl font-bold tracking-tight text-stone-900 dark:text-white">Nairaly</span>
           </Link>
         </div>
 
