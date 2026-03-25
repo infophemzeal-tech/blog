@@ -10,7 +10,7 @@ import Footer from "@/components/Footer"
 const geist = Geist({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "GistPadi",
+  title: "Nairaly",
   description: "A community of curious readers and writers",
 }
 
