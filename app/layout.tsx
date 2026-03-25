@@ -13,10 +13,9 @@ export const metadata: Metadata = {
   title: "Nairaly",
   description: "A community of curious readers and writers",
   verification: {
-    google: "google886ba643d2c79114", 
+    google: "kD-Fi3De8UKlsdFvfEdJVjXyi7vg6bww64EC3qFOkPE", 
   }
 }
-
 
 
 export default function RootLayout({
