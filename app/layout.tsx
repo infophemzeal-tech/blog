@@ -12,7 +12,12 @@ const geist = Geist({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Nairaly",
   description: "A community of curious readers and writers",
+  verification: {
+    google: "google886ba643d2c79114", 
+  }
 }
+
+
 
 export default function RootLayout({
   children,
