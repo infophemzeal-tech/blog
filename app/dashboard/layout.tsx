@@ -55,7 +55,7 @@ export default async function DashboardLayout({
         {/* MOBILE TOP BAR (Logo & Branding Only) */}
         <header className="lg:hidden flex items-center justify-between px-6 h-16 bg-white dark:bg-stone-900 border-b border-stone-100 dark:border-stone-800 sticky top-0 z-30 shadow-sm">
            <span className="font-serif italic font-extrabold text-xl tracking-tight dark:text-white">
-             GistPadi
+             Nairaly
            </span>
            
            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] text-white font-bold ring-2 ring-white dark:ring-stone-800 ${
