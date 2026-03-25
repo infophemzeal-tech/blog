@@ -172,7 +172,7 @@ function WhoToFollow() {
             id: p.id,
             name: p.name || p.full_name || "Writer",
             initial: (p.name || p.full_name || "?")[0].toUpperCase(),
-            bio: p.bio || "Storyteller on GistPadi",
+            bio: p.bio || "Storyteller on Nairaly",
           }))
         )
       }
@@ -238,7 +238,7 @@ function FooterLinks() {
         ))}
       </div>
       <p className="text-[10px] text-stone-300 dark:text-stone-700 font-sans uppercase tracking-widest font-medium">
-        © {new Date().getFullYear()} GistPadi
+        © {new Date().getFullYear()} Nairaly
       </p>
     </div>
   )

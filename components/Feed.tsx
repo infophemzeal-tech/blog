@@ -20,7 +20,7 @@ const formatGistDate = (dateString: string) => {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   };
 
-  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}, ${year} - gistpadi.ng`;
+  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}, ${year} - Nairaly.com`;
 };
 
 type Props = {
