@@ -9,8 +9,6 @@ import AuthProvider from "@/components/AuthProvider"
 import CookieConsent from "@/components/CookieConsent"
 import Footer from "@/components/Footer"
 
-// PERF: display:swap prevents invisible text during font load —
-// users see fallback font immediately, Geist swaps in once loaded.
 const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
@@ -35,8 +33,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* SEO: Organization structured data belongs in <head> so crawlers
-            see it on first parse — not deferred via afterInteractive */}
+        {/* ✅ preconnect so font/CSS fetches start immediately */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+
+        {/* ✅ DNS prefetch for GA — doesn't block, just warms the connection */}
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+
+        {/* ✅ Organization structured data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -77,9 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AuthProvider>
         </ThemeProvider>
 
-        {/* PERF: GA loaded with lazyOnload — fires after everything else is
-            done, so it never competes with LCP or TTI. afterInteractive still
-            runs during hydration and can delay interactivity on slow devices. */}
+        {/* ✅ GA deferred — lazyOnload fires after page is fully idle */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-HGYRG1B4DJ"
           strategy="lazyOnload"
