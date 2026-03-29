@@ -15,17 +15,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  async redirects() {
-    return [
-      // ✅ www → non-www (canonical domain)
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'www.nairaly.com' }],
-        destination: 'https://nairaly.com/:path*',
-        permanent: true, // 301
-      },
-    ]
-  },
+  // ✅ No redirects here — let Vercel handle www → non-www
 }
 
 export default nextConfig;
