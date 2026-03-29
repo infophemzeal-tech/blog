@@ -140,23 +140,22 @@ export default function ArticleCard({ article, priority = false }: ArticleCardPr
         </div>
 
         {/* Thumbnail */}
-        <Link href={`/article/${article.slug}`} className="shrink-0">
-          <div className="relative w-24 h-16 sm:w-32 sm:h-20 rounded-lg overflow-hidden bg-stone-200 dark:bg-stone-700 hover:opacity-80 transition-opacity">
-            {article.coverImage ? (
-              <Image
-                src={article.coverImage}
-                alt={article.title}
-                fill
-                sizes="(max-width: 640px) 96px, 128px"  // ✅ responsive sizes
-                className="object-cover"
-                priority={priority}   // ✅ first card loads eagerly, rest lazy
-              />
-            ) : (
-              // ✅ solid color fallback instead of gradient (no flash in dark mode)
-              <div className="w-full h-full bg-stone-200 dark:bg-stone-700" />
-            )}
-          </div>
-        </Link>
+<Link href={`/article/${article.slug}`} className="shrink-0">
+  <div className="relative w-24 h-16 sm:w-32 sm:h-20 rounded-lg overflow-hidden bg-stone-200 dark:bg-stone-700 hover:opacity-80 transition-opacity">
+    {article.coverImage ? (
+      <Image
+        src={article.coverImage}
+        alt={article.title}
+        fill
+        sizes="(max-width: 640px) 96px, 128px"
+        className="object-cover rounded-lg"
+        priority={priority}
+      />
+    ) : (
+      <div className="w-full h-full bg-stone-200 dark:bg-stone-700" />
+    )}
+  </div>
+</Link>
       </div>
 
       {/* ADMIN CONTROL PANEL */}
