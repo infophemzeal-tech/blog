@@ -35,13 +35,11 @@ export default function Footer() {
               Explore
             </h3>
             <ul className="space-y-3 text-sm text-stone-600 dark:text-stone-400">
-              <li><Link href="/blog"            className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Blog</Link></li>
-              <li><Link href="/remote-jobs"     className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Remote Jobs</Link></li>
-              <li><Link href="/?topic=tech"     className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Technology</Link></li>
-              <li><Link href="/?topic=security" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Security</Link></li>
-              <li><Link href="/?topic=culture"  className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Culture & Society</Link></li> {/* ✅ &amp; → & */}
-            </ul>
-          </div>
+  <li><Link href="/about"   className="hover:text-green-600 dark:hover:text-green-400 transition-colors">About Us</Link></li>
+  <li><Link href="/write"   className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Write for Us</Link></li>
+  <li><Link href="/authors" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Our Writers</Link></li>
+  <li><Link href="/contact" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Contact</Link></li>
+</ul>
 
           {/* Company */}
           <div>
