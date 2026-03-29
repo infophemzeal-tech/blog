@@ -7,7 +7,8 @@ import ThemeProvider from "@/components/ThemeProvider"
 import SearchProvider from "@/components/SearchProvider"
 import AuthProvider from "@/components/AuthProvider"
 import CookieConsent from "@/components/CookieConsent"
-import Footer from "@/components/Footer"
+import GoogleAnalytics from "@/components/GoogleAnalytics"
+import Footer from "@/components/Footer";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -76,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <SearchProvider>
               <div className="flex-1">{children}</div>
+              <GoogleAnalytics />
               <CookieConsent />
               <Footer />
             </SearchProvider>
