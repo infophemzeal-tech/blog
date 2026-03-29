@@ -50,8 +50,8 @@ export default function RateTicker() {
                 value={rates?.[p.code]}
               />
             ))}
-            <span className="inline-flex items-center px-5 text-white/20 text-base border-r border-white/[0.08]">
-              ·
+            <span className="inline-flex items-center px-5 text-white/40 text-base border-r border-white/[0.08]">
+              *
             </span>
           </div>
         ))}
