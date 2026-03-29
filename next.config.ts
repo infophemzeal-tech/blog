@@ -26,7 +26,16 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === "production",
   },
 
-  // ✅ No redirects here — let Vercel handle www → non-www
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.nairaly.com" }],
+        destination: "https://nairaly.com/:path*",
+        permanent: true,  // 308
+      },
+    ]
+  },
 }
 
 export default nextConfig
