@@ -1,8 +1,8 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: [
-    "blog-iaiu5x69m-infophemzeal-techs-projects.vercel.app"
+    "blog-iaiu5x69m-infophemzeal-techs-projects.vercel.app",
   ],
 
   images: {
@@ -15,7 +15,18 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: [
+      "@tailwindcss/typography",
+    ],
+  },
+
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
+
   // ✅ No redirects here — let Vercel handle www → non-www
 }
 
-export default nextConfig;
+export default nextConfig
