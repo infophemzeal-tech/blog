@@ -1,58 +1,46 @@
-# =============================================
-# robots.txt for Nairaly.com
-# Optimized for Nigerian tech & blog content
-# Last updated: March 2026
-# =============================================
+// app/robots.ts
+import { MetadataRoute } from 'next'
 
-User-agent: *
-Allow: /
+export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nairaly.com'
 
-# Disallow sensitive or admin areas
-Disallow: /api/
-Disallow: /_next/
-Disallow: /auth/
-Disallow: /dashboard/
-Disallow: /admin/
-Disallow: /private/
-Disallow: /preview/
+  return {
+    rules: [
+      // ── Default: all crawlers ──────────────────────────
+      {
+        userAgent: '*',
+        allow: [
+          '/',
+          '/_next/static/',   // JS & CSS — must be crawlable
+          '/_next/image/',    // Next.js optimized images
+        ],
+        disallow: [
+          '/api/',
+          '/auth/',
+          '/dashboard/',
+          '/settings/',
+          '/admin/',
+          '/private/',
+          '/preview/',
+          '/*?topic=null',    // block only null topic pages
+        ],
+      },
 
-# Disallow duplicate or low-value pages
-Disallow: /*?topic=null
-Disallow: /*?*
-Disallow: /article/*?*
+      // ── Block AI training crawlers ─────────────────────
+      {
+        userAgent: 'GPTBot',
+        disallow: '/',
+      },
+      {
+        userAgent: 'ChatGPT-User',
+        disallow: '/',
+      },
+      {
+        userAgent: 'Google-Extended',
+        disallow: '/',
+      },
+    ],
 
-# Allow specific query parameters that are important
-Allow: /?topic=
-Allow: /article/
-
-# Sitemap reference
-Sitemap: https://nairaly.com/sitemap.xml
-
-# Crawl-delay (optional - helpful for smaller sites)
-# Crawl-delay: 1
-
-# =============================================
-# Specific rules for major crawlers
-# =============================================
-
-User-agent: Googlebot
-Allow: /
-Sitemap: https://nairaly.com/sitemap.xml
-
-User-agent: Googlebot-Image
-Allow: /
-Sitemap: https://nairaly.com/sitemap.xml
-
-User-agent: Bingbot
-Allow: /
-Sitemap: https://nairaly.com/sitemap.xml
-
-# Block aggressive AI crawlers if desired (optional)
-User-agent: GPTBot
-Disallow: /
-
-User-agent: ChatGPT-User
-Disallow: /
-
-User-agent: Google-Extended
-Disallow: /
+    sitemap: `${baseUrl}/sitemap.xml`,
+  }
+}
