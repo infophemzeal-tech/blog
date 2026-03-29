@@ -26,11 +26,18 @@ function SignInForm() {
     })
 
     if (error) {
-      setError(error.message)
+      // User-friendly error mapping
+      if (error.message.includes("Invalid login credentials")) {
+        setError("Invalid email or password.")
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
       return
     }
 
+    // Use router.refresh to ensure Navbar and AuthProviders 
+    // fetch the new session immediately
     router.push(next)
     router.refresh()
   }
@@ -40,20 +47,20 @@ function SignInForm() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-8">
-          <Link href="/">
-            <span className="font-serif italic text-4xl font-bold text-stone-900 dark:text-white">
-              Medium
+          <Link href="/" className="group">
+            <span className="font-serif italic text-4xl font-bold text-green-600 dark:text-white group-hover:text-green-500 transition-colors">
+              Nairaly
             </span>
           </Link>
-          <p className="text-stone-500 dark:text-stone-400 mt-3 text-sm">
-            Welcome back.
+          <p className="text-stone-500 dark:text-stone-400 mt-3 text-sm font-medium">
+            Welcome back to the community.
           </p>
         </div>
 
         <form onSubmit={handleSignIn} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-stone-700 dark:text-stone-300">
-              Email
+            <label className="text-xs font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400">
+              Email Address
             </label>
             <input
               type="email"
@@ -61,49 +68,54 @@ function SignInForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full px-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-white text-sm outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors placeholder:text-stone-400"
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50 text-stone-900 dark:text-white text-sm outline-none focus:border-green-500 dark:focus:border-green-500 transition-all placeholder:text-stone-400"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-stone-700 dark:text-stone-300">
-              Password
-            </label>
+            <div className="flex justify-between items-center">
+               <label className="text-xs font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400">
+                Password
+              </label>
+              <Link href="/auth/reset" className="text-[11px] font-semibold text-stone-400 hover:text-green-600 transition-colors">
+                Forgot?
+              </Link>
+            </div>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Your password"
+              placeholder="••••••••"
               required
-              className="w-full px-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-white text-sm outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors placeholder:text-stone-400"
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50 text-stone-900 dark:text-white text-sm outline-none focus:border-green-500 dark:focus:border-green-500 transition-all placeholder:text-stone-400"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950 px-4 py-2.5 rounded-lg">
+            <div className="text-xs font-semibold text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900 px-4 py-3 rounded-xl flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
               {error}
-            </p>
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-700 dark:hover:bg-stone-200 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            className="w-full py-3 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-bold hover:bg-green-600 dark:hover:bg-green-500 dark:hover:text-white transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-2 shadow-sm"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Verifying..." : "Sign in"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-stone-500 dark:text-stone-400 mt-6">
+        <p className="text-center text-sm text-stone-500 dark:text-stone-400 mt-8">
           No account?{" "}
           <Link
             href={`/auth/signup?next=${next}`}
-            className="text-stone-900 dark:text-white underline underline-offset-2"
+            className="text-stone-900 dark:text-white font-bold hover:text-green-600 dark:hover:text-green-400 transition-colors underline decoration-stone-200 dark:decoration-stone-800 underline-offset-4"
           >
-            Create one
+            Create one for free
           </Link>
         </p>
-
       </div>
     </main>
   )
@@ -111,7 +123,7 @@ function SignInForm() {
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white dark:bg-stone-950" />}>
+    <Suspense fallback={<div className="min-h-screen bg-white dark:bg-stone-950 flex items-center justify-center animate-pulse" />}>
       <SignInForm />
     </Suspense>
   )

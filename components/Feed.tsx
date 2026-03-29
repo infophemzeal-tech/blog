@@ -1,44 +1,46 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSearch } from "./SearchProvider"
 import ArticleCard from "./ArticleCard"
 import { createClient } from "../lib/supabase/client"
 import type { Article } from "../data/articles"
-
-// --- Professional Utility: Gist Date Formatter ---
-const formatGistDate = (dateString: string) => {
-  const date = new Date(dateString);
-  const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
-  const monthName = date.toLocaleDateString("en-US", { month: "short" });
-  const day = date.getDate();
-  const year = date.getFullYear();
-
-  const getOrdinal = (n: number) => {
-    const s = ["th", "st", "nd", "rd"];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-  };
-
-  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}, ${year} - Nairaly.com`;
-};
 
 type Props = {
   activeTab: "for-you" | "featured"
   activeTopic: string
 }
 
+// Professional Date Formatter
+const formatGistDate = (dateString: string): string => {
+  const date = new Date(dateString)
+  const dayName = date.toLocaleDateString("en-US", { weekday: "short" })
+  const monthName = date.toLocaleDateString("en-US", { month: "short" })
+  const day = date.getDate()
+  const year = date.getFullYear()
+
+  const getOrdinal = (n: number) => {
+    const s = ["th", "st", "nd", "rd"]
+    const v = n % 100
+    return n + (s[(v - 20) % 10] || s[v] || s[0])
+  }
+
+  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}, ${year}`
+}
+
 export default function Feed({ activeTab, activeTopic }: Props) {
   const { query: searchKeyword } = useSearch()
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const supabase = createClient()
 
   useEffect(() => {
     const fetchArticles = async () => {
       setLoading(true)
+      setError(null)
 
-      // 1. Build Base Query
       let queryBuilder = supabase
         .from("articles")
         .select(`
@@ -48,106 +50,140 @@ export default function Feed({ activeTab, activeTopic }: Props) {
           profiles ( full_name, avatar_url )
         `)
         .eq("published", true)
-        .eq("is_deactivated", false); // 🛡️ Hide moderated content
+        .eq("is_deactivated", false)
 
-      // 2. Multi-Level Sorting ($5000+ Logic)
-      // First priority: Pinned items at the top
-      queryBuilder = queryBuilder.order("is_pinned", { ascending: false });
+      // Pinning priority
+      queryBuilder = queryBuilder.order("is_pinned", { ascending: false })
 
-      // Second priority: Based on active tab
+      // Tab-based sorting
       if (activeTab === "featured") {
-        queryBuilder = queryBuilder.order("claps_count", { ascending: false });
+        queryBuilder = queryBuilder.order("claps_count", { ascending: false })
       } else {
-        queryBuilder = queryBuilder.order("created_at", { ascending: false });
+        queryBuilder = queryBuilder.order("created_at", { ascending: false })
       }
 
-      // 3. Topic Filtering logic
+      // Topic filtering
       if (activeTopic) {
-        const formattedTopicName = activeTopic.replace(/-/g, " ");
-        const { data: topicData } = await supabase
+        const { data: topicData, error: topicError } = await supabase
           .from("topics")
           .select("id")
-          .ilike("name", formattedTopicName)
-          .single();
+          .ilike("name", activeTopic.replace(/-/g, " "))
+          .single()
 
-        if (topicData) {
-          queryBuilder = queryBuilder.eq("topic_id", topicData.id);
-        } else {
-          setArticles([]); // No match found for this slug
-          setLoading(false);
-          return;
+        if (topicError || !topicData) {
+          setArticles([])
+          setLoading(false)
+          return
         }
+
+        queryBuilder = queryBuilder.eq("topic_id", topicData.id)
       }
 
-      // Execute
-      const { data, error } = await queryBuilder;
+      const { data, error } = await queryBuilder.limit(20)
 
       if (error) {
-        console.error("Feed error:", error.message);
-      } else if (data) {
-        const mapped: Article[] = data.map((a: any) => ({
+        console.error("Feed fetch error:", error)
+        setError("Failed to load articles")
+      } else {
+        const mapped: Article[] = (data || []).map((a: any) => ({
           id: String(a.id),
-          author: a.profiles?.full_name || "Writer",
-          authorInitial: (a.profiles?.full_name?.[0] || "G").toUpperCase(),
+          author: a.profiles?.full_name || "Nairaly Writer",
+          authorInitial: (a.profiles?.full_name?.[0] || "N").toUpperCase(),
           publication: a.publication || "",
           slug: a.slug,
           title: a.title,
           subtitle: a.subtitle || "",
-          date: formatGistDate(a.created_at), // 🇳🇬 Brand formatted date
-          claps: a.claps_count >= 1000 ? `${(a.claps_count / 1000).toFixed(1)}K` : String(a.claps_count || 0),
+          date: formatGistDate(a.created_at),
+          claps: a.claps_count >= 1000 
+            ? `${(a.claps_count / 1000).toFixed(1)}K` 
+            : String(a.claps_count || 0),
           comments: a.comments_count || 0,
           readTime: a.read_time || "5 min read",
           body: "",
           coverImage: a.cover_image || "",
           views_count: a.views_count || 0,
-        }));
-        setArticles(mapped);
+        }))
+        setArticles(mapped)
       }
-      setLoading(false);
-    };
 
-    fetchArticles();
-  }, [activeTab, activeTopic, supabase]);
+      setLoading(false)
+    }
 
-  // 4. In-Memory Search (Fast filtering)
-  const filtered = searchKeyword.trim()
-    ? articles.filter(art => 
-        art.title.toLowerCase().includes(searchKeyword.toLowerCase()) || 
-        art.author.toLowerCase().includes(searchKeyword.toLowerCase())
-      )
-    : articles;
+    fetchArticles()
+  }, [activeTab, activeTopic, supabase])
 
-  // 5. High-End Skeleton Loading State
+  // Memoized search filtering (prevents unnecessary re-renders)
+  const filteredArticles = useMemo(() => {
+    if (!searchKeyword.trim()) return articles
+
+    const keyword = searchKeyword.toLowerCase()
+    return articles.filter((art) =>
+      art.title.toLowerCase().includes(keyword) ||
+      art.author.toLowerCase().includes(keyword) ||
+      (art.subtitle && art.subtitle.toLowerCase().includes(keyword))
+    )
+  }, [articles, searchKeyword])
+
+  // Loading State - Refined & Modern
   if (loading) {
     return (
-      <div className="flex flex-col gap-8 py-8 animate-pulse">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex gap-4">
-             <div className="flex-1 space-y-4">
-                <div className="h-4 bg-stone-100 dark:bg-stone-800 rounded w-1/4" />
-                <div className="h-6 bg-stone-100 dark:bg-stone-800 rounded w-3/4" />
-                <div className="h-10 bg-stone-100 dark:bg-stone-800 rounded w-full" />
-             </div>
-             <div className="w-24 h-24 bg-stone-100 dark:bg-stone-800 rounded-2xl shrink-0" />
+      <div className="space-y-12 py-8">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="animate-pulse flex flex-col md:flex-row gap-6 border-b border-stone-100 dark:border-stone-800 pb-12 last:border-none last:pb-0">
+            <div className="flex-1 space-y-5">
+              <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-28" />
+              <div className="h-9 bg-stone-200 dark:bg-stone-800 rounded-lg w-11/12" />
+              <div className="h-5 bg-stone-200 dark:bg-stone-800 rounded w-4/5" />
+              <div className="flex gap-4 pt-4">
+                <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-20" />
+                <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-16" />
+              </div>
+            </div>
+            <div className="w-full md:w-80 h-56 bg-stone-200 dark:bg-stone-800 rounded-3xl shrink-0" />
           </div>
         ))}
       </div>
-    );
+    )
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-stone-900 text-white dark:bg-white dark:text-stone-900 rounded-2xl text-sm font-medium hover:bg-black dark:hover:bg-stone-100 transition"
+        >
+          Retry Loading
+        </button>
+      </div>
+    )
   }
 
   return (
-    <div className="flex flex-col mb-20">
-      {filtered.length > 0 ? (
-        filtered.map((article) => (
-          <ArticleCard key={article.id} article={article} />
-        ))
+    <div className="flex flex-col">
+      {filteredArticles.length > 0 ? (
+        <div className="space-y-16">
+          {filteredArticles.map((article) => (
+            <ArticleCard key={article.id} article={article} />
+          ))}
+        </div>
       ) : (
-        <div className="text-center py-24 flex flex-col items-center gap-4">
-          <p className="text-stone-400 font-medium">
-            {searchKeyword ? `No gists found matching "${searchKeyword}"` : `No gists found in this section yet.`}
+        <div className="text-center py-28">
+          <div className="mx-auto w-16 h-16 bg-stone-100 dark:bg-stone-900 rounded-full flex items-center justify-center mb-6">
+            🔍
+          </div>
+          <h3 className="text-2xl font-medium text-stone-900 dark:text-white mb-2">
+            No articles found
+          </h3>
+          <p className="text-stone-500 dark:text-stone-400 max-w-md mx-auto">
+            {searchKeyword 
+              ? `We couldn't find any articles matching "${searchKeyword}"` 
+              : "No articles available in this section yet."}
           </p>
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -1,21 +1,74 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Geist } from "next/font/google"
 import Script from "next/script"
 import "./globals.css"
+
 import ThemeProvider from "@/components/ThemeProvider"
 import SearchProvider from "@/components/SearchProvider"
 import AuthProvider from "@/components/AuthProvider"
 import CookieConsent from "@/components/CookieConsent"
 import Footer from "@/components/Footer"
 
-const geist = Geist({ subsets: ["latin"] })
+const geist = Geist({ 
+  subsets: ["latin"],
+  variable: "--font-geist",
+  weight: ["400", "500", "600", "700"]
+})
 
 export const metadata: Metadata = {
-  title: "Nairaly",
-  description: "A community of curious readers and writers",
+  title: {
+    default: "Nairaly",
+    template: "%s | Nairaly"
+  },
+  description: "A community of curious readers and writers in Nigeria. Discover insightful articles on tech, remote jobs, security, culture, and more.",
+  keywords: ["Nairaly", "Nigeria", "tech articles", "remote jobs Nigeria", "Nigerian writers", "African stories"],
+  authors: [{ name: "Nairaly" }],
+  creator: "Nairaly",
+  publisher: "Nairaly",
+  
+  // Nigerian-friendly locale
+  metadataBase: new URL("https://nairaly.com"),
+  alternates: {
+    canonical: "https://nairaly.com",
+  },
+  openGraph: {
+    title: "Nairaly - Community of Curious Readers & Writers",
+    description: "Discover high-quality articles on technology, remote jobs, security, culture, and Nigerian perspectives.",
+    url: "https://nairaly.com",
+    siteName: "Nairaly",
+    locale: "en_NG",
+    type: "website",
+    images: [
+      {
+        url: "https://nairaly.com/og-default.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Nairaly - Nigerian Community of Readers and Writers",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nairaly",
+    description: "A community of curious readers and writers in Nigeria",
+    images: ["https://nairaly.com/og-default.jpg"],
+  },
   verification: {
     google: "kD-Fi3De8UKlsdFvfEdJVjXyi7vg6bww64EC3qFOkPE",
   },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 }
 
 export default function RootLayout({
@@ -25,8 +78,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      
       <head>
+        {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-HGYRG1B4DJ"
           strategy="afterInteractive"
@@ -36,11 +89,18 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-HGYRG1B4DJ');
+            gtag('config', 'G-HGYRG1B4DJ', {
+              page_path: window.location.pathname,
+            });
           `}
         </Script>
+
+        {/* Optional: Google Site Verification (already in metadata) */}
       </head>
-      <body className={`${geist.className} bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen`}>
+
+      <body 
+        className={`${geist.className} bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen antialiased`}
+      >
         <ThemeProvider>
           <AuthProvider>
             <SearchProvider>
@@ -52,6 +112,37 @@ export default function RootLayout({
             </SearchProvider>
           </AuthProvider>
         </ThemeProvider>
+
+        {/* Organization Structured Data - Helps with brand SEO */}
+        <Script
+          id="organization-jsonld"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Nairaly",
+              url: "https://nairaly.com",
+              logo: "https://nairaly.com/logo-sq.png",
+              description: "A community of curious readers and writers in Nigeria",
+              sameAs: [
+                // Add your social media links here if available
+                // "https://twitter.com/nairaly",
+                // "https://instagram.com/nairaly",
+              ],
+              address: {
+                "@type": "PostalAddress",
+                addressCountry: "NG",
+              },
+              contactPoint: {
+                "@type": "ContactPoint",
+                contactType: "customer service",
+                url: "https://nairaly.com",
+              }
+            })
+          }}
+        />
       </body>
     </html>
   )

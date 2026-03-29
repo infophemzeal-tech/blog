@@ -26,7 +26,7 @@ type TopicCategory = {
 }
 
 type Person = {
-  id: number
+  id: string
   name: string
   initial: string
   bio: string
@@ -167,14 +167,16 @@ function WhoToFollow() {
         console.error("WhoToFollow error:", error)
       } else {
         setPeople(
-          (data || []).map((p) => ({
-            ...p,
-            id: p.id,
-            name: p.name || p.full_name || "Writer",
-            initial: (p.name || p.full_name || "?")[0].toUpperCase(),
-            bio: p.bio || "Storyteller on Nairaly",
-          }))
-        )
+  (data || []).map((p) => {
+    const fullNameOrUsername = p.full_name || "Writer"
+    return {
+      id: String(p.id),
+      name: fullNameOrUsername,
+      initial: fullNameOrUsername[0]?.toUpperCase() ?? "?",
+      bio: p.bio || "Storyteller on Nairaly",
+    }
+  })
+)
       }
       setLoading(false)
     }

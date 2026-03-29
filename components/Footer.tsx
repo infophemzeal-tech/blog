@@ -1,57 +1,112 @@
 import Link from "next/link"
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear()
+
   return (
-    <footer className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 mt-16">
-      <div className="max-w-5xl mx-auto px-4 py-10">
+    <footer className="bg-stone-50 dark:bg-stone-950 border-t border-stone-200 dark:border-stone-800 mt-auto">
+      <div className="max-w-7xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          
+          {/* Brand Column */}
+          <div className="space-y-4">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-green-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-xl">N</span>
+              </div>
+              <span className="font-serif text-2xl font-bold text-stone-900 dark:text-white">
+                Nairaly
+              </span>
+            </Link>
+            
+            <p className="text-stone-600 dark:text-stone-400 text-[15px] leading-relaxed max-w-xs">
+              A community of curious readers and writers sharing stories, 
+              insights, and perspectives from Nigeria and beyond.
+            </p>
 
-        {/* Top row */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-1.5 text-xs text-stone-500">
+              Made with ❤️ in Lagos
+            </div>
+          </div>
 
-          {/* Brand */}
-          <span className="font-serif italic text-2xl font-bold text-stone-900 dark:text-white">
-            Nairaly
-          </span>
+          {/* Navigation */}
+          <div>
+            <h3 className="font-semibold text-stone-900 dark:text-white mb-4 text-sm tracking-widest uppercase">
+              Explore
+            </h3>
+            <ul className="space-y-3 text-sm text-stone-600 dark:text-stone-400">
+              <li><Link href="/blog" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Blog</Link></li>
+              <li><Link href="/remote-jobs" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Remote Jobs</Link></li>
+              <li><Link href="/?topic=tech" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Technology</Link></li>
+              <li><Link href="/?topic=security" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Security</Link></li>
+              <li><Link href="/?topic=culture" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Culture &amp; Society</Link></li>
+            </ul>
+          </div>
 
-          {/* Nav links */}
-          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-stone-500 dark:text-stone-400">
-            <Link href="/" className="hover:text-stone-900 dark:hover:text-white transition-colors">
-              Home
-            </Link>
-            <Link href="/search" className="hover:text-stone-900 dark:hover:text-white transition-colors">
-              Search
-            </Link>
-            <Link href="/auth/signin" className="hover:text-stone-900 dark:hover:text-white transition-colors">
-              Sign in
-            </Link>
-            <Link href="/auth/signup" className="hover:text-stone-900 dark:hover:text-white transition-colors">
-              Sign up
-            </Link>
-            <Link href="/dashboard/write" className="hover:text-stone-900 dark:hover:text-white transition-colors">
-              Write
-            </Link>
-          </nav>
-        </div>
+          {/* Company */}
+          <div>
+            <h3 className="font-semibold text-stone-900 dark:text-white mb-4 text-sm tracking-widest uppercase">
+              Company
+            </h3>
+            <ul className="space-y-3 text-sm text-stone-600 dark:text-stone-400">
+              <li><Link href="/about" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">About Us</Link></li>
+              <li><Link href="/write" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Write for Us</Link></li>
+              <li><Link href="/authors" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Our Writers</Link></li>
+              <li><Link href="/contact" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Contact</Link></li>
+            </ul>
+          </div>
 
-        {/* Divider */}
-        <div className="border-t border-stone-100 dark:border-stone-800 my-6" />
+          {/* Legal & Resources */}
+          <div>
+            <h3 className="font-semibold text-stone-900 dark:text-white mb-4 text-sm tracking-widest uppercase">
+              Legal
+            </h3>
+            <ul className="space-y-3 text-sm text-stone-600 dark:text-stone-400">
+              <li><Link href="/privacy" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Terms of Service</Link></li>
+              <li><Link href="/cookies" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Cookie Policy</Link></li>
+            </ul>
 
-        {/* Bottom row */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-400 dark:text-stone-500">
-          <p>© {new Date().getFullYear()} Nairaly. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
-              Privacy
-            </Link>
-            <Link href="#" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
-              Terms
-            </Link>
-            <a href="mailto:support@Nairaly.com" className="hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
-              Support
-            </a>
+            <div className="mt-8">
+              <p className="text-xs text-stone-500">
+                © {currentYear} Nairaly. All rights reserved.<br />
+                Lagos, Nigeria
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Bottom Bar */}
+        <div className="mt-16 pt-8 border-t border-stone-200 dark:border-stone-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-stone-500">
+          <p>
+            Built for curious minds • Powered by Nigerian stories
+          </p>
+          
+          <div className="flex items-center gap-6">
+            <Link 
+              href="https://twitter.com/nairaly" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+            >
+              Twitter
+            </Link>
+            <Link 
+              href="https://instagram.com/nairaly" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+            >
+              Instagram
+            </Link>
+            <Link 
+              href="/sitemap.xml" 
+              className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
+            >
+              Sitemap
+            </Link>
+          </div>
+        </div>
       </div>
     </footer>
   )
