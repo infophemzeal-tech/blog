@@ -11,7 +11,7 @@ import Link from "next/link"
 import sanitizeHtml from "sanitize-html"
 import type { Article } from "@/data/articles"
 import ClapButton from "@/components/ClapButton"
-// PERF: AudioReader, CommentsSection, ViewTracker are lazy-loaded
+
 import { AudioReader, CommentsSection, ViewTracker } from "@/components/DeferredComponents"
 
 // ─────────────────────────────────────────────
@@ -353,7 +353,7 @@ export default async function Page({ params }: Props) {
                 placeholder="blur"
                 blurDataURL={BLUR_DATA_URL}
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 720px"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 176px"
               />
             </div>
           </figure>

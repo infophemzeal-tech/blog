@@ -35,3 +35,4 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 "# blog" 
+#public/og-default.jpg   ← 1200×630px recommended logo-sq.png      ← 512×512px recommended

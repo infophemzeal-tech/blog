@@ -17,16 +17,13 @@ function HomeContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-
   const [isPending, startTransition] = useTransition()
 
-  // Derive current filters from URL
   const activeTopic = searchParams.get("topic") || ""
   const activeTab = (searchParams.get("tab") as "for-you" | "featured") || "for-you"
 
   const updateFilters = useCallback((updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString())
-
     Object.entries(updates).forEach(([key, value]) => {
       if (value === null || value === "") {
         params.delete(key)
@@ -34,8 +31,6 @@ function HomeContent() {
         params.set(key, value)
       }
     })
-
-    // Update URL without full page reload
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`, { scroll: false })
     })
@@ -43,19 +38,21 @@ function HomeContent() {
 
   return (
     <main className="max-w-5xl mx-auto pb-12">
+      {/* ✅ SEO h1 — visually hidden but crawlable by Google */}
+      <h1 className="sr-only">
+        {activeTopic
+          ? `${activeTopic.replace(/-/g, " ")} articles — Nairaly`
+          : "Nairaly — Stories for curious readers and writers"}
+      </h1>
+
       <TopBanner />
       <Navbar />
-
       <div className={`flex gap-12 px-4 mt-8 transition-opacity duration-300 ${isPending ? 'opacity-70' : 'opacity-100'}`}>
-
-        {/* Main Feed Section */}
         <div className="flex-1 min-w-0">
           <Tabs
             activeTab={activeTab}
             onTabChange={(tab) => updateFilters({ tab })}
           />
-
-          {/* Active Topic Filter Indicator */}
           {activeTopic && (
             <div className="flex items-center gap-3 py-4">
               <span className="text-sm text-stone-500 dark:text-stone-400">
@@ -72,11 +69,8 @@ function HomeContent() {
               </button>
             </div>
           )}
-
           <Feed activeTab={activeTab} activeTopic={activeTopic} />
         </div>
-
-        {/* Sidebar - Desktop Only */}
         <div className="w-72 shrink-0 hidden lg:block">
           <div className="pt-6 pl-8 border-l border-stone-100 dark:border-stone-800 sticky top-24">
             <Sidebar

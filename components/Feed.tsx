@@ -1,6 +1,5 @@
 "use client"
-
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearch } from "./SearchProvider"
 import ArticleCard from "./ArticleCard"
 import { createClient } from "../lib/supabase/client"
@@ -11,20 +10,17 @@ type Props = {
   activeTopic: string
 }
 
-// Professional Date Formatter
 const formatGistDate = (dateString: string): string => {
   const date = new Date(dateString)
   const dayName = date.toLocaleDateString("en-US", { weekday: "short" })
   const monthName = date.toLocaleDateString("en-US", { month: "short" })
   const day = date.getDate()
   const year = date.getFullYear()
-
   const getOrdinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"]
     const v = n % 100
     return n + (s[(v - 20) % 10] || s[v] || s[0])
   }
-
   return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}, ${year}`
 }
 
@@ -33,89 +29,83 @@ export default function Feed({ activeTab, activeTopic }: Props) {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
   const supabase = createClient()
 
-  useEffect(() => {
-    const fetchArticles = async () => {
-      setLoading(true)
-      setError(null)
+  // ✅ fetchArticles at component level, not inside useEffect
+  const fetchArticles = useCallback(async () => {
+    setLoading(true)
+    setError(null)
 
-      let queryBuilder = supabase
-        .from("articles")
-        .select(`
-          id, title, subtitle, slug, publication, read_time,
-          claps_count, comments_count, views_count, cover_image,
-          created_at, published, is_pinned, is_deactivated, topic_id,
-          profiles ( full_name, avatar_url )
-        `)
-        .eq("published", true)
-        .eq("is_deactivated", false)
+    let queryBuilder = supabase
+      .from("articles")
+      .select(`
+        id, title, subtitle, slug, publication, read_time,
+        claps_count, comments_count, views_count, cover_image,
+        created_at, published, is_pinned, is_deactivated, topic_id,
+        profiles ( full_name, avatar_url )
+      `)
+      .eq("published", true)
+      .eq("is_deactivated", false)
+      .order("is_pinned", { ascending: false })
 
-      // Pinning priority
-      queryBuilder = queryBuilder.order("is_pinned", { ascending: false })
-
-      // Tab-based sorting
-      if (activeTab === "featured") {
-        queryBuilder = queryBuilder.order("claps_count", { ascending: false })
-      } else {
-        queryBuilder = queryBuilder.order("created_at", { ascending: false })
-      }
-
-      // Topic filtering
-      if (activeTopic) {
-        const { data: topicData, error: topicError } = await supabase
-          .from("topics")
-          .select("id")
-          .ilike("name", activeTopic.replace(/-/g, " "))
-          .single()
-
-        if (topicError || !topicData) {
-          setArticles([])
-          setLoading(false)
-          return
-        }
-
-        queryBuilder = queryBuilder.eq("topic_id", topicData.id)
-      }
-
-      const { data, error } = await queryBuilder.limit(20)
-
-      if (error) {
-        console.error("Feed fetch error:", error)
-        setError("Failed to load articles")
-      } else {
-        const mapped: Article[] = (data || []).map((a: any) => ({
-          id: String(a.id),
-          author: a.profiles?.full_name || "Nairaly Writer",
-          authorInitial: (a.profiles?.full_name?.[0] || "N").toUpperCase(),
-          publication: a.publication || "",
-          slug: a.slug,
-          title: a.title,
-          subtitle: a.subtitle || "",
-          date: formatGistDate(a.created_at),
-          claps: a.claps_count >= 1000 
-            ? `${(a.claps_count / 1000).toFixed(1)}K` 
-            : String(a.claps_count || 0),
-          comments: a.comments_count || 0,
-          readTime: a.read_time || "5 min read",
-          body: "",
-          coverImage: a.cover_image || "",
-          views_count: a.views_count || 0,
-        }))
-        setArticles(mapped)
-      }
-
-      setLoading(false)
+    if (activeTab === "featured") {
+      queryBuilder = queryBuilder.order("claps_count", { ascending: false })
+    } else {
+      queryBuilder = queryBuilder.order("created_at", { ascending: false })
     }
 
-    fetchArticles()
-  }, [activeTab, activeTopic, supabase])
+    if (activeTopic) {
+      const { data: topicData, error: topicError } = await supabase
+        .from("topics")
+        .select("id")
+        .ilike("name", activeTopic.replace(/-/g, " "))
+        .single()
 
-  // Memoized search filtering (prevents unnecessary re-renders)
+      if (topicError || !topicData) {
+        setArticles([])
+        setLoading(false)
+        return
+      }
+      queryBuilder = queryBuilder.eq("topic_id", topicData.id)
+    }
+
+    const { data, error } = await queryBuilder.limit(20)
+
+    if (error) {
+      console.error("Feed fetch error:", error)
+      setError("Failed to load articles")
+    } else {
+      const mapped: Article[] = (data || []).map((a: any) => ({
+        id: String(a.id),
+        author: a.profiles?.full_name || "Nairaly Writer",
+        authorInitial: (a.profiles?.full_name?.[0] || "N").toUpperCase(),
+        publication: a.publication || "",
+        slug: a.slug,
+        title: a.title,
+        subtitle: a.subtitle || "",
+        date: formatGistDate(a.created_at),
+        claps: a.claps_count >= 1000
+          ? `${(a.claps_count / 1000).toFixed(1)}K`
+          : String(a.claps_count || 0),
+        comments: a.comments_count || 0,
+        readTime: a.read_time || "5 min read",
+        body: "",
+        coverImage: a.cover_image || "",
+        views_count: a.views_count || 0,
+      }))
+      setArticles(mapped)
+    }
+    setLoading(false)
+  }, [activeTab, activeTopic])
+
+  // ✅ useEffect just calls fetchArticles
+  useEffect(() => {
+    fetchArticles()
+  }, [fetchArticles])
+
+  // ✅ Memoized search filtering
   const filteredArticles = useMemo(() => {
     if (!searchKeyword.trim()) return articles
-
     const keyword = searchKeyword.toLowerCase()
     return articles.filter((art) =>
       art.title.toLowerCase().includes(keyword) ||
@@ -124,12 +114,15 @@ export default function Feed({ activeTab, activeTopic }: Props) {
     )
   }, [articles, searchKeyword])
 
-  // Loading State - Refined & Modern
+  // Loading State
   if (loading) {
     return (
       <div className="space-y-12 py-8">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="animate-pulse flex flex-col md:flex-row gap-6 border-b border-stone-100 dark:border-stone-800 pb-12 last:border-none last:pb-0">
+          <div
+            key={i}
+            className="animate-pulse flex flex-col md:flex-row gap-6 border-b border-stone-100 dark:border-stone-800 pb-12 last:border-none last:pb-0"
+          >
             <div className="flex-1 space-y-5">
               <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-28" />
               <div className="h-9 bg-stone-200 dark:bg-stone-800 rounded-lg w-11/12" />
@@ -151,8 +144,8 @@ export default function Feed({ activeTab, activeTopic }: Props) {
     return (
       <div className="text-center py-20">
         <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
+        <button
+          onClick={fetchArticles}  // ✅ no more window.location.reload()
           className="px-6 py-3 bg-stone-900 text-white dark:bg-white dark:text-stone-900 rounded-2xl text-sm font-medium hover:bg-black dark:hover:bg-stone-100 transition"
         >
           Retry Loading
@@ -161,12 +154,17 @@ export default function Feed({ activeTab, activeTopic }: Props) {
     )
   }
 
+  // Feed
   return (
     <div className="flex flex-col">
       {filteredArticles.length > 0 ? (
         <div className="space-y-16">
-          {filteredArticles.map((article) => (
-            <ArticleCard key={article.id} article={article} />
+          {filteredArticles.map((article, index) => (
+            <ArticleCard
+              key={article.id}
+              article={article}
+              priority={index === 0}  // ✅ first card loads eagerly
+            />
           ))}
         </div>
       ) : (
@@ -178,8 +176,8 @@ export default function Feed({ activeTab, activeTopic }: Props) {
             No articles found
           </h3>
           <p className="text-stone-500 dark:text-stone-400 max-w-md mx-auto">
-            {searchKeyword 
-              ? `We couldn't find any articles matching "${searchKeyword}"` 
+            {searchKeyword
+              ? `We couldn't find any articles matching "${searchKeyword}"`
               : "No articles available in this section yet."}
           </p>
         </div>

@@ -11,9 +11,21 @@ module.exports = {
         serif: ["Georgia", "Times New Roman", "serif"],
         sans: ["system-ui", "-apple-system", "Arial", "sans-serif"],
       },
+      screens: {
+      xs: "400px", 
     },
-  },
-   plugins: [
+      animation: {
+        ticker: "ticker 18s linear infinite",
+      },
+      keyframes: {
+        ticker: {
+          "0%":   { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+      },
+    },   // ✅ closes extend
+  },     // ✅ closes theme
+  plugins: [
     require("@tailwindcss/typography"),
   ],
 }

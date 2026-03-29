@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist } from "next/font/google"
 import Script from "next/script"
 import "./globals.css"
-
+import { getSiteMetadata } from "@/lib/metadata"
 import ThemeProvider from "@/components/ThemeProvider"
 import SearchProvider from "@/components/SearchProvider"
 import AuthProvider from "@/components/AuthProvider"
@@ -15,52 +15,7 @@ const geist = Geist({
   weight: ["400", "500", "600", "700"]
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: "Nairaly",
-    template: "%s | Nairaly"
-  },
-  description: "A community of curious readers and writers in Nigeria. Discover insightful articles on tech, remote jobs, security, culture, and more.",
-  keywords: ["Nairaly", "Nigeria", "tech articles", "remote jobs Nigeria", "Nigerian writers", "African stories"],
-  authors: [{ name: "Nairaly" }],
-  creator: "Nairaly",
-  publisher: "Nairaly",
-  
-  // Nigerian-friendly locale
-  metadataBase: new URL("https://nairaly.com"),
-  alternates: {
-    canonical: "https://nairaly.com",
-  },
-  openGraph: {
-    title: "Nairaly - Community of Curious Readers & Writers",
-    description: "Discover high-quality articles on technology, remote jobs, security, culture, and Nigerian perspectives.",
-    url: "https://nairaly.com",
-    siteName: "Nairaly",
-    locale: "en_NG",
-    type: "website",
-    images: [
-      {
-        url: "https://nairaly.com/og-default.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Nairaly - Nigerian Community of Readers and Writers",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Nairaly",
-    description: "A community of curious readers and writers in Nigeria",
-    images: ["https://nairaly.com/og-default.jpg"],
-  },
-  verification: {
-    google: "kD-Fi3De8UKlsdFvfEdJVjXyi7vg6bww64EC3qFOkPE",
-  },
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
-}
+
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -71,6 +26,9 @@ export const viewport: Viewport = {
   ],
 }
 
+export async function generateMetadata() {
+  return getSiteMetadata()
+}
 export default function RootLayout({
   children,
 }: {

@@ -22,7 +22,7 @@ const MenuIcon = () => (
 )
 
 const WriteIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
@@ -71,7 +71,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // Guard navigation wipes from erasing typed input when entering a genuine "/search" routing parameter view
   useEffect(() => {
     if (!pathname.startsWith("/search")) {
       setSearchOpen(false)
@@ -88,15 +87,13 @@ export default function Navbar() {
 
   useEffect(() => {
     let mounted = true
-
     if (!user) {
       setIsAdmin(false)
       setUserInitial("")
       return
     }
-
     setUserInitial(user.email?.[0]?.toUpperCase() ?? "U")
-    
+
     const checkAdmin = async () => {
       try {
         const { data } = await supabase
@@ -104,7 +101,6 @@ export default function Navbar() {
           .select("role, full_name")
           .eq("id", user.id)
           .single()
-          
         if (mounted) {
           if (data?.role === "super_admin") setIsAdmin(true)
           if (data?.full_name) setUserInitial(data.full_name[0].toUpperCase())
@@ -114,30 +110,21 @@ export default function Navbar() {
       }
     }
     checkAdmin()
-
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [user, supabase])
 
-  // Responsive Shortcut Focus Handler
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // isContentEditable checks editable states for span elements aside regular inputs
       const activeTag = (e.target as HTMLElement).tagName
       const isEditable = (e.target as HTMLElement).isContentEditable
-
       if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(activeTag) && !isEditable) {
         e.preventDefault()
-
-        // Responsive toggling behavior for focuses on Desktop viewport screens:
-        if (window.innerWidth >= 640) { // SM and upwards Tailwind scope breakpoint
+        if (window.innerWidth >= 640) {
           desktopSearchRef.current?.focus()
         } else {
           setSearchOpen(true)
         }
       }
-
       if (e.key === "Escape") {
         setSearchOpen(false)
         setSearch("")
@@ -146,7 +133,6 @@ export default function Navbar() {
         mobileSearchRef.current?.blur()
       }
     }
-
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [setQuery])
@@ -188,45 +174,52 @@ export default function Navbar() {
       <MenuDrawer isOpen={menuOpen} onClose={() => setMenuOpen(false)} isAdmin={isAdmin} />
 
       <nav className={`
-        w-full sticky top-0 z-40 px-4 py-3
+        w-full sticky top-0 z-40
         bg-white/95 dark:bg-stone-950/95
         backdrop-blur-md
         border-b border-stone-200 dark:border-stone-800
         transition-shadow duration-200
         ${scrolled ? "shadow-[0_1px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_16px_rgba(0,0,0,0.4)]" : ""}
       `}>
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
+
+        {/* ── Main bar */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 h-14 flex items-center gap-2">
 
           {/* LEFT: Menu + Logo */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
-              className="p-1.5 -ml-1.5 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all duration-150"
+              className="p-2 -ml-1 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all duration-150"
             >
               <MenuIcon />
             </button>
-            <Link href="/" className="group">
-              <span className="font-serif italic text-[1.4rem] font-bold tracking-tight text-green-600 dark:text-white group-hover:text-green-500 dark:group-hover:text-green-400 transition-colors duration-150">
-                Nairaly
-              </span>
-            </Link>
+
+            <Link href="/" className="flex items-center gap-2 group">
+  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-600 rounded-xl flex items-center justify-center shrink-0">
+    <span className="text-white font-bold text-base sm:text-lg">N</span>
+  </div>
+  
+  <span className="font-serif text-[1.3rem] sm:text-[1.5rem] font-bold tracking-tight text-green-600 dark:text-white group-hover:text-green-500 dark:group-hover:text-green-400 transition-colors duration-150">
+    Nairaly
+  </span>
+</Link>
           </div>
 
-          {/* CENTER: Desktop Search */}
-          <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xs hidden sm:block ml-3">
+      
+          <form onSubmit={handleSearchSubmit} className="flex-1 max-w-sm hidden sm:block mx-4">
             <div className="relative flex items-center">
-              <span className="absolute left-3.5 text-stone-400 pointer-events-none">
+              <span className="absolute left-3 text-stone-400 pointer-events-none">
                 <SearchIcon />
               </span>
               <input
                 ref={desktopSearchRef}
                 type="text"
-                placeholder="Search Nairaly"
+                placeholder="Search"
                 value={search}
                 onChange={(e) => handleChange(e.target.value)}
                 className="
-                  w-full pl-9 pr-10 py-2 rounded-full text-sm
+                  w-full pl-9 pr-9 py-2 rounded-full text-sm
                   bg-stone-100 dark:bg-stone-800
                   text-stone-700 dark:text-stone-200
                   placeholder:text-stone-400 dark:placeholder:text-stone-500
@@ -245,7 +238,7 @@ export default function Navbar() {
                   <XIcon />
                 </button>
               ) : (
-                <kbd className="absolute right-3 hidden lg:flex items-center justify-center text-[10px] font-medium text-stone-400 dark:text-stone-500 bg-stone-200 dark:bg-stone-700 rounded px-1.5 py-0.5 pointer-events-none">
+                <kbd className="absolute right-3 hidden lg:flex items-center text-[10px] font-medium text-stone-400 dark:text-stone-500 bg-stone-200 dark:bg-stone-700 rounded px-1.5 py-0.5 pointer-events-none">
                   /
                 </kbd>
               )}
@@ -253,9 +246,9 @@ export default function Navbar() {
           </form>
 
           {/* RIGHT: Actions */}
-          <div className="ml-auto flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="ml-auto flex items-center gap-0.5 sm:gap-1 shrink-0">
 
-            {/* Mobile search toggle */}
+          
             <button
               type="button"
               aria-label="Search"
@@ -276,23 +269,26 @@ export default function Navbar() {
 
             {user ? (
               <>
+                {/* Admin badge — desktop only */}
                 {isAdmin && (
                   <Link
                     href="/dashboard/admin"
-                    className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-extrabold tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors border border-blue-100 dark:border-blue-800"
+                    className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-extrabold tracking-widest text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors border border-green-100 dark:border-green-800"
                   >
-                    ⚡ ADMIN
+                    ADMIN
                   </Link>
                 )}
 
+                {/* Write — hidden on mobile, use menu drawer instead */}
                 <Link
                   href="/dashboard/write"
                   className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all duration-150"
                 >
                   <WriteIcon />
-                  Write
+                  <span>Write</span>
                 </Link>
 
+                {/* Sign out — hidden on mobile */}
                 <button
                   onClick={handleSignOut}
                   className="hidden md:block px-3 py-1.5 text-sm text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
@@ -300,48 +296,56 @@ export default function Navbar() {
                   Sign out
                 </button>
 
+                {/* Avatar — always visible */}
                 <div
                   title={user.email || ""}
                   className={`
-                    relative w-8 h-8 rounded-full
+                    relative w-8 h-8 rounded-full ml-1
                     flex items-center justify-center
                     text-white text-[11px] font-bold
-                    shrink-0 cursor-default select-none shadow-sm
+                    shrink-0 cursor-default select-none
                     ring-2 ring-white dark:ring-stone-900
                     ${isAdmin
-                      ? "bg-blue-600 ring-offset-1 ring-offset-blue-100 dark:ring-offset-stone-950"
+                      ? "bg-green-700 ring-offset-1 ring-offset-green-100 dark:ring-offset-stone-950"
                       : "bg-gradient-to-br from-green-500 to-emerald-700"
                     }
                   `}
                 >
                   {userInitial}
                   {isAdmin && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full border-[1.5px] border-white dark:border-stone-900 animate-pulse" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border-[1.5px] border-white dark:border-stone-900 animate-pulse" />
                   )}
                 </div>
               </>
             ) : (
               <>
+                {/* Sign in — hidden on mobile */}
                 <Link
                   href="/auth/signin"
                   className="hidden md:block px-3 py-1.5 text-sm font-medium text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white transition-colors"
                 >
                   Sign in
                 </Link>
+
+                {/* Get started — always visible, shrinks on mobile */}
                 <Link
                   href="/auth/signup"
-                  className="px-4 py-1.5 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-sm font-semibold hover:bg-green-600 dark:hover:bg-green-500 dark:hover:text-white transition-colors duration-200 shadow-sm"
+                  className="px-3 sm:px-4 py-1.5 rounded-full bg-green-600 text-white text-xs sm:text-sm font-semibold hover:bg-green-500 transition-colors duration-200 shadow-sm whitespace-nowrap"
                 >
-                  Get started
+                  <span className="sm:hidden">Join</span>
+                  <span className="hidden sm:inline">Get started</span>
                 </Link>
               </>
             )}
           </div>
         </div>
 
-        {/* MOBILE: Expandable Search */}
-        {searchOpen && (
-          <div className="mt-2.5 sm:hidden">
+        {/* ── Mobile expandable search */}
+        <div className={`
+          sm:hidden overflow-hidden transition-all duration-200
+          ${searchOpen ? "max-h-20 opacity-100" : "max-h-0 opacity-0"}
+        `}>
+          <div className="px-3 pb-3">
             <form onSubmit={handleSearchSubmit}>
               <div className="relative flex items-center">
                 <span className="absolute left-3.5 text-stone-400 pointer-events-none">
@@ -350,7 +354,7 @@ export default function Navbar() {
                 <input
                   ref={mobileSearchRef}
                   type="text"
-                  placeholder="Search Nairaly..."
+                  placeholder="Search Nairaly…"
                   value={search}
                   onChange={(e) => handleChange(e.target.value)}
                   className="
@@ -376,7 +380,8 @@ export default function Navbar() {
               </div>
             </form>
           </div>
-        )}
+        </div>
+
       </nav>
     </>
   )
