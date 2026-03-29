@@ -2,7 +2,12 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import UserRow from "@/components/UserRow"
 import CreateTopicModal from "@/components/CreateTopicModal"
-import StaffPicksManager from "@/components/StaffPicksManager"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false }, 
+}
 export default async function AdminPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

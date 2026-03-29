@@ -4,6 +4,7 @@ import { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Terms of Service | Nairaly",
   description: "User agreement and terms of use for Nairaly.com",
+   alternates: { canonical: "https://nairaly.com/terms" },
 }
 
 export default function TermsPage() {

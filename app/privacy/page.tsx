@@ -4,6 +4,7 @@ import { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Privacy Policy | Nairaly",
   description: "Privacy Policy and Data Collection practices for Nairaly.com",
+  alternates: { canonical: "https://nairaly.com/privacy" },
 }
 
 export default function PrivacyPage() {

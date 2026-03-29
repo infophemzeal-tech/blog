@@ -4,6 +4,13 @@ import { useState, Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Sign in to your Nairaly account.",
+  robots: { index: false, follow: false }, // ✅ auth pages shouldn't be indexed
+}
 
 function SignInForm() {
   const [email, setEmail] = useState("")

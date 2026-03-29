@@ -5,6 +5,7 @@ import Link from "next/link"
 export const metadata: Metadata = {
   title: "About | Nairaly",
   description: "Learn more about Nairaly, a community of curious readers and writers sharing stories, ideas, and insights.",
+  alternates: { canonical: "https://nairaly.com/about" },
 }
 
 export default function AboutPage() {
