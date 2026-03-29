@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import UserRow from "@/components/UserRow"
 import CreateTopicModal from "@/components/CreateTopicModal"
+import StaffPicksManager from "@/components/StaffPicksManager"
 export default async function AdminPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -38,6 +39,7 @@ export default async function AdminPage() {
         {/* ADD THIS BUTTON HERE */}
         <div className="flex gap-3">
            <CreateTopicModal />
+           
         </div>
       </div>
 

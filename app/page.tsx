@@ -1,93 +1,33 @@
-"use client"
+import type { Metadata } from "next"
+import { Suspense } from "react"
+import HomeContent from "@/components/Homecontent"
 
-import { useTransition, useCallback, Suspense } from "react"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
-
-import TopBanner from "@/components/TopBanner"
-import Navbar from "@/components/Navbar"
-import Tabs from "@/components/Tabs"
-import Feed from "@/components/Feed"
-import Sidebar from "@/components/Sidebar"
-
-/**
- * HOME CONTENT - Client Component
- * Handles all filtering logic using URL params
- */
-function HomeContent() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const [isPending, startTransition] = useTransition()
-
-  const activeTopic = searchParams.get("topic") || ""
-  const activeTab = (searchParams.get("tab") as "for-you" | "featured") || "for-you"
-
-  const updateFilters = useCallback((updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString())
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === "") {
-        params.delete(key)
-      } else {
-        params.set(key, value)
-      }
-    })
-    startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    })
-  }, [searchParams, pathname, router])
-
-  return (
-    <main className="max-w-5xl mx-auto pb-12">
-      {/* ✅ SEO h1 — visually hidden but crawlable by Google */}
-      <h1 className="sr-only">
-        {activeTopic
-          ? `${activeTopic.replace(/-/g, " ")} articles — Nairaly`
-          : "Nairaly — Stories for curious readers and writers"}
-      </h1>
-
-      <TopBanner />
-      <Navbar />
-      <div className={`flex gap-12 px-4 mt-8 transition-opacity duration-300 ${isPending ? 'opacity-70' : 'opacity-100'}`}>
-        <div className="flex-1 min-w-0">
-          <Tabs
-            activeTab={activeTab}
-            onTabChange={(tab) => updateFilters({ tab })}
-          />
-          {activeTopic && (
-            <div className="flex items-center gap-3 py-4">
-              <span className="text-sm text-stone-500 dark:text-stone-400">
-                Showing articles for:
-              </span>
-              <span className="px-4 py-1.5 rounded-full bg-green-600 text-white text-sm font-medium capitalize">
-                {activeTopic.replace(/-/g, " ")}
-              </span>
-              <button
-                onClick={() => updateFilters({ topic: null })}
-                className="ml-2 text-xs text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors font-medium"
-              >
-                Clear filter ✕
-              </button>
-            </div>
-          )}
-          <Feed activeTab={activeTab} activeTopic={activeTopic} />
-        </div>
-        <div className="w-72 shrink-0 hidden lg:block">
-          <div className="pt-6 pl-8 border-l border-stone-100 dark:border-stone-800 sticky top-24">
-            <Sidebar
-              activeTopic={activeTopic}
-              onTopicChange={(slug) => updateFilters({ topic: slug })}
-            />
-          </div>
-        </div>
-      </div>
-    </main>
-  )
+// ─────────────────────────────────────────────────────────────────────────────
+// CANONICAL — fixes "Duplicate without user-selected canonical" in GSC.
+// ?topic= and ?tab= are UI filters, not distinct indexable pages.
+// All query-param variants point back to the bare homepage URL.
+// ─────────────────────────────────────────────────────────────────────────────
+export const metadata: Metadata = {
+  title: "Nairaly — Stories for curious readers and writers",
+  description: "Discover deep reads on culture, tech, business, and life in Nigeria and beyond.",
+  alternates: {
+    canonical: "https://www.nairaly.com/",
+  },
+  openGraph: {
+    title: "Nairaly",
+    description: "Discover deep reads on culture, tech, business, and life in Nigeria and beyond.",
+    url: "https://www.nairaly.com/",
+    type: "website",
+    images: [{ url: "https://www.nairaly.com/og-default.jpg", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nairaly",
+    description: "Discover deep reads on culture, tech, business, and life in Nigeria and beyond.",
+    images: ["https://www.nairaly.com/og-default.jpg"],
+  },
 }
 
-/**
- * Root Home Page with Suspense Boundary
- * Required for useSearchParams() in Next.js App Router
- */
 export default function Home() {
   return (
     <Suspense

@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-// --- Professional Icon Set ($5000+ Theme Style) ---
+// ─── Icon Set ─────────────────────────────────────────────────────────────────
+
 const Icons = {
   Stories: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -24,104 +25,148 @@ const Icons = {
       <path d="m9 17 3-3 3 3" />
     </svg>
   ),
+  // Star icon for Staff Picks
+  StaffPicks: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />
+    </svg>
+  ),
   Exit: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
-  )
-};
+  ),
+}
 
-// Maps labels to icons
 const ICON_MAP: Record<string, React.ReactNode> = {
-  "Stories": <Icons.Stories />,
-  "Stats": <Icons.Stats />,
-  "Admin Console": <Icons.Admin />
-};
+  "Stories":      <Icons.Stories />,
+  "Stats":        <Icons.Stats />,
+  "Admin Console":<Icons.Admin />,
+  "Staff Picks":  <Icons.StaffPicks />,
+}
 
-export default function DashboardSidebar({ 
-  navItems, 
-  userInitial, 
-  isSuperAdmin 
-}: { 
-  navItems: { label: string; href: string }[], 
-  userInitial: string, 
-  isSuperAdmin: boolean 
+export default function DashboardSidebar({
+  navItems,
+  userInitial,
+  isSuperAdmin,
+}: {
+  navItems: { label: string; href: string }[]
+  userInitial: string
+  isSuperAdmin: boolean
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
-  // Premium background colors for active links
-  const activeStyles = isSuperAdmin 
-    ? "bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none" 
-    : "bg-stone-900 text-white dark:bg-white dark:text-stone-950 shadow-lg shadow-stone-200 dark:shadow-none";
+  const activeStyles = isSuperAdmin
+    ? "bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-none"
+    : "bg-stone-900 text-white dark:bg-white dark:text-stone-950 shadow-lg shadow-stone-200 dark:shadow-none"
+
+  // Inject Staff Picks nav item for super_admins, right before the last item
+  const allNavItems = isSuperAdmin
+    ? [
+        ...navItems.filter((i) => i.label !== "Staff Picks"),
+        { label: "Staff Picks", href: "/dashboard/staff-picks" },
+      ]
+    : navItems
 
   return (
     <>
-      {/* --- DESKTOP SIDEBAR (Hidden on mobile) --- */}
+      {/* ── Desktop Sidebar ────────────────────────────────────────────── */}
       <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-white dark:bg-stone-950 border-r border-stone-100 dark:border-stone-900 flex-col z-50">
-        {/* Brand Mark */}
+        {/* Brand */}
         <div className="p-8">
           <Link href="/" className="group flex items-center gap-3">
-            <div className="w-9 h-9 bg-stone-900 dark:bg-white rounded-xl flex items-center justify-center text-white dark:text-black font-bold text-xl">G</div>
-            <span className="font-serif italic text-2xl font-bold tracking-tight text-stone-900 dark:text-white">Nairaly</span>
+            <div className="w-9 h-9 bg-stone-900 dark:bg-white rounded-xl flex items-center justify-center text-white dark:text-black font-bold text-xl">
+              G
+            </div>
+            <span className="font-serif italic text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
+              Nairaly
+            </span>
           </Link>
         </div>
 
-        {/* Nav Links */}
-        <nav className="flex-1 px-4 space-y-2 mt-4">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
+        {/* Nav */}
+        <nav className="flex-1 px-4 space-y-1 mt-4">
+          {allNavItems.map((item) => {
+            const isActive = pathname === item.href
+            const isStaffPicks = item.label === "Staff Picks"
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                  isActive ? activeStyles : "text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-900"
-                }`}
+                  isActive
+                    ? activeStyles
+                    : "text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-900"
+                } ${isStaffPicks && !isActive ? "mt-2 border border-dashed border-stone-200 dark:border-stone-800" : ""}`}
               >
                 <span className={`shrink-0 ${isActive ? "scale-110" : "group-hover:scale-110 transition-transform"}`}>
                   {ICON_MAP[item.label] || <Icons.Stories />}
                 </span>
                 <span className="text-sm font-semibold tracking-tight">{item.label}</span>
+                {isStaffPicks && !isActive && (
+                  <span className="ml-auto text-[9px] font-black uppercase tracking-widest text-blue-500 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded-full">
+                    Admin
+                  </span>
+                )}
               </Link>
             )
           })}
         </nav>
 
-        {/* Identity Section */}
+        {/* Identity */}
         <div className="p-4 mt-auto">
           <div className="p-4 bg-stone-50 dark:bg-stone-900/50 rounded-2xl border border-stone-100 dark:border-stone-800 flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-sm ${isSuperAdmin ? 'bg-gradient-to-tr from-blue-600 to-blue-400' : 'bg-gradient-to-tr from-stone-800 to-stone-600'}`}>
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-sm ${
+                isSuperAdmin
+                  ? "bg-gradient-to-tr from-blue-600 to-blue-400"
+                  : "bg-gradient-to-tr from-stone-800 to-stone-600"
+              }`}
+            >
               {userInitial}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Account</span>
-              <span className="text-sm font-bold truncate text-stone-900 dark:text-white">{isSuperAdmin ? "Super Admin" : "Verified Writer"}</span>
+              <span className="text-sm font-bold truncate text-stone-900 dark:text-white">
+                {isSuperAdmin ? "Super Admin" : "Verified Writer"}
+              </span>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* --- MOBILE FLOATING BOTTOM NAV (Visible only on mobile) --- */}
+      {/* ── Mobile Bottom Nav ──────────────────────────────────────────── */}
       <nav className="lg:hidden fixed bottom-4 left-4 right-4 h-16 bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl border border-stone-200/50 dark:border-stone-800/50 rounded-2xl flex items-center justify-around z-50 shadow-2xl overflow-hidden">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
+        {allNavItems.map((item) => {
+          const isActive = pathname === item.href
           return (
-            <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center flex-1 h-full group">
-              <div className={`p-2.5 rounded-xl transition-all duration-200 ${
-                isActive 
-                  ? (isSuperAdmin ? "bg-blue-600 text-white" : "bg-stone-900 text-white dark:bg-white dark:text-black") 
-                  : "text-stone-400"
-              }`}>
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex flex-col items-center justify-center flex-1 h-full group"
+            >
+              <div
+                className={`p-2.5 rounded-xl transition-all duration-200 ${
+                  isActive
+                    ? isSuperAdmin
+                      ? "bg-blue-600 text-white"
+                      : "bg-stone-900 text-white dark:bg-white dark:text-black"
+                    : "text-stone-400"
+                }`}
+              >
                 {ICON_MAP[item.label] || <Icons.Stories />}
               </div>
             </Link>
           )
         })}
-        {/* Static Exit to Home for Mobile */}
-        <Link href="/" className="flex flex-col items-center justify-center flex-1 h-full text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors border-l border-stone-100/50 dark:border-stone-800/50">
-           <Icons.Exit />
+        {/* Exit to home */}
+        <Link
+          href="/"
+          className="flex flex-col items-center justify-center flex-1 h-full text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors border-l border-stone-100/50 dark:border-stone-800/50"
+        >
+          <Icons.Exit />
         </Link>
       </nav>
     </>

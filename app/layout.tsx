@@ -9,13 +9,14 @@ import AuthProvider from "@/components/AuthProvider"
 import CookieConsent from "@/components/CookieConsent"
 import Footer from "@/components/Footer"
 
-const geist = Geist({ 
+// PERF: display:swap prevents invisible text during font load —
+// users see fallback font immediately, Geist swaps in once loaded.
+const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
-  weight: ["400", "500", "600", "700"]
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 })
-
-
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -26,56 +27,18 @@ export const viewport: Viewport = {
   ],
 }
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   return getSiteMetadata()
 }
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-HGYRG1B4DJ"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-HGYRG1B4DJ', {
-              page_path: window.location.pathname,
-            });
-          `}
-        </Script>
-
-        {/* Optional: Google Site Verification (already in metadata) */}
-      </head>
-
-      <body 
-        className={`${geist.className} bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen antialiased`}
-      >
-        <ThemeProvider>
-          <AuthProvider>
-            <SearchProvider>
-              <div className="flex-1">
-                {children}
-              </div>
-              <CookieConsent />
-              <Footer />
-            </SearchProvider>
-          </AuthProvider>
-        </ThemeProvider>
-
-        {/* Organization Structured Data - Helps with brand SEO */}
-        <Script
-          id="organization-jsonld"
+        {/* SEO: Organization structured data belongs in <head> so crawlers
+            see it on first parse — not deferred via afterInteractive */}
+        <script
           type="application/ld+json"
-          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
@@ -85,7 +48,6 @@ export default function RootLayout({
               logo: "https://nairaly.com/logo-sq.png",
               description: "A community of curious readers and writers in Nigeria",
               sameAs: [
-                // Add your social media links here if available
                 // "https://twitter.com/nairaly",
                 // "https://instagram.com/nairaly",
               ],
@@ -97,10 +59,41 @@ export default function RootLayout({
                 "@type": "ContactPoint",
                 contactType: "customer service",
                 url: "https://nairaly.com",
-              }
-            })
+              },
+            }).replace(/</g, "\\u003c"),
           }}
         />
+      </head>
+      <body
+        className={`${geist.className} bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen antialiased`}
+      >
+        <ThemeProvider>
+          <AuthProvider>
+            <SearchProvider>
+              <div className="flex-1">{children}</div>
+              <CookieConsent />
+              <Footer />
+            </SearchProvider>
+          </AuthProvider>
+        </ThemeProvider>
+
+        {/* PERF: GA loaded with lazyOnload — fires after everything else is
+            done, so it never competes with LCP or TTI. afterInteractive still
+            runs during hydration and can delay interactivity on slow devices. */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-HGYRG1B4DJ"
+          strategy="lazyOnload"
+        />
+        <Script id="google-analytics" strategy="lazyOnload">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-HGYRG1B4DJ', {
+              page_path: window.location.pathname,
+            });
+          `}
+        </Script>
       </body>
     </html>
   )

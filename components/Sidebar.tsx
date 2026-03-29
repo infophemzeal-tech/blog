@@ -51,7 +51,7 @@ function StaffPicks() {
         .select("id, publication, author, title, slug, date")
         .order("id", { ascending: true })
         .limit(3)
-      if (error) console.error("StaffPicks error:", error)
+      if (error) console.error("StaffPicks error:", error.message, error.code, error.details, error.hint)
       else setPicks(data || [])
       setLoading(false)
     }

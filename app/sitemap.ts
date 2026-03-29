@@ -54,5 +54,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.75,
     }))
 
-  return [...staticPages, ...articlePages]
+ const { data: authors } = await supabase
+  .from("profiles")
+  .select("id, updated_at")
+  .eq("is_banned", false)
+
+const authorPages: MetadataRoute.Sitemap = (authors || []).map((a) => ({
+  url: `${baseUrl}/author/${a.id}`,
+  lastModified: new Date(a.updated_at ?? new Date()),
+  changeFrequency: "weekly" as const,
+  priority: 0.5,
+}))
+
+return [...staticPages, ...articlePages, ...authorPages]
 }

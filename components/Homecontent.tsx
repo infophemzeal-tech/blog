@@ -1,0 +1,99 @@
+"use client"
+import { useTransition, useCallback } from "react"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import TopBanner from "@/components/TopBanner"
+import Navbar from "@/components/Navbar"
+import Tabs from "@/components/Tabs"
+import Feed from "@/components/Feed"
+import Sidebar from "@/components/Sidebar"
+
+/**
+ * HomeContent — Client Component
+ *
+ * Extracted from page.tsx so that page.tsx can remain a Server Component
+ * and export `metadata` (including the canonical URL).
+ *
+ * `generateMetadata` / `metadata` exports are only valid in Server Components,
+ * but `useSearchParams` requires a Client Component — hence the split.
+ */
+export default function HomeContent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
+
+  const activeTopic = searchParams.get("topic") || ""
+  const activeTab = (searchParams.get("tab") as "for-you" | "featured") || "for-you"
+
+  const updateFilters = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString())
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "") {
+          params.delete(key)
+        } else {
+          params.set(key, value)
+        }
+      })
+      startTransition(() => {
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+      })
+    },
+    [searchParams, pathname, router]
+  )
+
+  return (
+    <main className="max-w-5xl mx-auto pb-12">
+      {/* SEO h1 — visually hidden but crawlable by Google */}
+      <h1 className="sr-only">
+        {activeTopic
+          ? `${activeTopic.replace(/-/g, " ")} articles — Nairaly`
+          : "Nairaly — Stories for curious readers and writers"}
+      </h1>
+
+      <TopBanner />
+      <Navbar />
+
+      <div
+        className={`flex gap-12 px-4 mt-8 transition-opacity duration-300 ${
+          isPending ? "opacity-70" : "opacity-100"
+        }`}
+      >
+        <div className="flex-1 min-w-0">
+          <Tabs
+            activeTab={activeTab}
+            onTabChange={(tab) => updateFilters({ tab })}
+          />
+
+          {activeTopic && (
+            <div className="flex items-center gap-3 py-4">
+              <span className="text-sm text-stone-500 dark:text-stone-400">
+                Showing articles for:
+              </span>
+              <span className="px-4 py-1.5 rounded-full bg-green-600 text-white text-sm font-medium capitalize">
+                {activeTopic.replace(/-/g, " ")}
+              </span>
+              <button
+                onClick={() => updateFilters({ topic: null })}
+                className="ml-2 text-xs text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors font-medium"
+              >
+                Clear filter ✕
+              </button>
+            </div>
+          )}
+
+          <Feed activeTab={activeTab} activeTopic={activeTopic} />
+        </div>
+
+        <div className="w-72 shrink-0 hidden lg:block">
+          <div className="pt-6 pl-8 border-l border-stone-100 dark:border-stone-800 sticky top-24">
+            <Sidebar
+              activeTopic={activeTopic}
+              onTopicChange={(slug) => updateFilters({ topic: slug })}
+            />
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
