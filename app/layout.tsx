@@ -18,7 +18,7 @@ const geist = Geist({
 })
 
 // ✅ Updated GA4 property ID
-const GA_ID = "G-VR0DSD91S5"
+const GA_ID = "G-HGYRG1B4DJ"
 const SITE_URL = "https://nairaly.com"
 
 export const viewport: Viewport = {
