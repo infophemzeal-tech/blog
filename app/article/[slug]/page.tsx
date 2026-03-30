@@ -346,12 +346,12 @@ export default async function Page({ params }: Props) {
             </div>
           )}
 
-          <h1 className="font-serif text-[1.9rem] sm:text-[2.8rem] lg:text-[3.2rem] font-bold text-stone-900 dark:text-white leading-[1.1] mb-4 sm:mb-6 tracking-tight">
+          <h1 className="font-serif text-[1.7rem] sm:text-[2.2rem] lg:text-[2.6rem]  font-bold text-stone-900 dark:text-white leading-[1.1] mb-4 sm:mb-6 tracking-tight">
             {article.title}
           </h1>
 
           {article.subtitle && (
-            <p className="font-serif text-lg sm:text-xl text-stone-500 dark:text-stone-400 leading-snug mb-6 sm:mb-8 font-light italic">
+            <p className="font-serif text-base sm:text-lg  text-stone-500 dark:text-stone-400 leading-snug mb-6 sm:mb-8 font-light italic">
               {article.subtitle}
             </p>
           )}
@@ -423,23 +423,23 @@ export default async function Page({ params }: Props) {
         <AudioReader title={article.title} body={article.body || ""} authorName={authorName} />
 
         <section
-          className="
-            prose prose-stone dark:prose-invert max-w-none
-            text-[17px] sm:text-[19px] lg:text-[21px]
-            leading-[1.8] sm:leading-[1.85]
-            text-stone-800 dark:text-stone-200
-            prose-headings:font-serif prose-headings:font-bold prose-headings:tracking-tight
-            prose-h2:text-2xl sm:prose-h2:text-3xl
-            prose-p:mb-6 sm:prose-p:mb-8
-            prose-img:rounded-xl sm:prose-img:rounded-3xl
-            prose-blockquote:border-green-500
-            prose-blockquote:bg-stone-50/50 dark:prose-blockquote:bg-stone-900/30
-            prose-a:text-green-600 dark:prose-a:text-green-400
-            prose-code:text-sm prose-code:bg-stone-100 dark:prose-code:bg-stone-800
-            prose-pre:text-sm prose-pre:overflow-x-auto
-          "
-          dangerouslySetInnerHTML={{ __html: safeBody }}
-        />
+  className="
+    prose prose-stone dark:prose-invert max-w-none
+    text-[15px] sm:text-[17px] lg:text-[18px]
+    leading-[1.75] sm:leading-[1.8]
+    text-stone-800 dark:text-stone-200
+    prose-headings:font-serif prose-headings:font-bold prose-headings:tracking-tight
+    prose-h2:text-xl sm:prose-h2:text-2xl
+    prose-p:mb-5 sm:prose-p:mb-6
+    prose-img:rounded-xl sm:prose-img:rounded-3xl
+    prose-blockquote:border-green-500
+    prose-blockquote:bg-stone-50/50 dark:prose-blockquote:bg-stone-900/30
+    prose-a:text-green-600 dark:prose-a:text-green-400
+    prose-code:text-sm prose-code:bg-stone-100 dark:prose-code:bg-stone-800
+    prose-pre:text-sm prose-pre:overflow-x-auto
+  "
+  dangerouslySetInnerHTML={{ __html: safeBody }}
+/>
 
         {/* ── Clap + Share ── */}
         <div className="mt-10 sm:mt-16 flex items-center justify-between py-6 sm:py-8 border-y border-stone-100 dark:border-stone-900">
