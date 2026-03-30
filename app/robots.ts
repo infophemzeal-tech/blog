@@ -1,46 +1,47 @@
-// app/robots.ts
-import { MetadataRoute } from 'next'
+import { MetadataRoute } from "next"
+
+const SITE_URL = "https://nairaly.com"
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nairaly.com'
-
   return {
     rules: [
-      // ── Default: all crawlers ──────────────────────────
+      // ── All crawlers ──────────────────────────────────────
       {
-        userAgent: '*',
-        allow: [
-          '/',
-          '/_next/static/',   // JS & CSS — must be crawlable
-          '/_next/image/',    // Next.js optimized images
-        ],
+        userAgent: "*",
+        allow: ["/"],
         disallow: [
-          '/api/',
-          '/auth/',
-          '/dashboard/',
-          '/settings/',
-          '/admin/',
-          '/private/',
-          '/preview/',
-          '/*?topic=null',    // block only null topic pages
+          // Auth & user flows
+          "/auth/",
+          "/api/",
+
+          // App UI — not indexable content
+          "/dashboard/",
+          "/settings/",
+          "/admin/",
+          "/private/",
+          "/preview/",
+
+          // ✅ Block ALL query strings (topic, q, filter, etc)
+          "/*?*",
+
+          // Thin/legal pages — waste crawl budget
+          "/privacy",
+          "/terms",
+          "/cookies",
+          "/help",
         ],
       },
 
-      // ── Block AI training crawlers ─────────────────────
-      {
-        userAgent: 'GPTBot',
-        disallow: '/',
-      },
-      {
-        userAgent: 'ChatGPT-User',
-        disallow: '/',
-      },
-      {
-        userAgent: 'Google-Extended',
-        disallow: '/',
-      },
+      // ── Block AI training crawlers ────────────────────────
+      { userAgent: "GPTBot",          disallow: ["/"] },
+      { userAgent: "ChatGPT-User",    disallow: ["/"] },
+      { userAgent: "Google-Extended", disallow: ["/"] },
+      { userAgent: "CCBot",           disallow: ["/"] },
+      { userAgent: "anthropic-ai",    disallow: ["/"] },
+      { userAgent: "Claude-Web",      disallow: ["/"] },
+      { userAgent: "Omgilibot",       disallow: ["/"] },
+      { userAgent: "FacebookBot",     disallow: ["/"] },
     ],
-
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }
