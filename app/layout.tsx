@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist } from "next/font/google"
 import Script from "next/script"
 import "./globals.css"
+import { getSiteMetadata } from "@/lib/metadata"
 import ThemeProvider from "@/components/ThemeProvider"
 import SearchProvider from "@/components/SearchProvider"
 import AuthProvider from "@/components/AuthProvider"
@@ -16,7 +17,8 @@ const geist = Geist({
   preload: true,
 })
 
-const GA_ID = "G-HGYRG1B4DJ"
+// ✅ Updated GA4 property ID
+const GA_ID = "G-VR0DSD91S5"
 const SITE_URL = "https://nairaly.com"
 
 export const viewport: Viewport = {
@@ -28,58 +30,11 @@ export const viewport: Viewport = {
   ],
 }
 
-// ✅ All SEO handled here — no manual <head> tags needed
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    metadataBase: new URL(SITE_URL),
-    title: {
-      default: "Nairaly — Stories for curious readers and writers",
-      template: "%s | Nairaly",
-    },
-    description:
-      "A community of curious readers and writers sharing stories, insights, and perspectives from Nigeria and beyond.",
-    alternates: {
-      canonical: "/", // resolves to https://nairaly.com/
-    },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        "max-snippet": -1,
-        "max-image-preview": "large",
-        "max-video-preview": -1,
-      },
-    },
-    openGraph: {
-      type: "website",
-      url: SITE_URL,
-      siteName: "Nairaly",
-      title: "Nairaly — Stories for curious readers and writers",
-      description:
-        "A community of curious readers and writers sharing stories, insights, and perspectives from Nigeria and beyond.",
-      images: [
-        {
-          url: `${SITE_URL}/og-image.png`, // make sure this exists!
-          width: 1200,
-          height: 630,
-          alt: "Nairaly",
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      site: "@nairaly",
-      title: "Nairaly — Stories for curious readers and writers",
-      description:
-        "A community of curious readers and writers sharing stories, insights, and perspectives from Nigeria and beyond.",
-      images: [`${SITE_URL}/og-image.png`],
-    },
-  }
+  return getSiteMetadata()
 }
 
-// ✅ Structured data — clean and correct canonical URL
+// ✅ Organization structured data
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -102,6 +57,7 @@ const organizationSchema = {
   },
 }
 
+// ✅ WebSite schema — enables Google Sitelinks Searchbox
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -121,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* ✅ Structured data — Organization + WebSite (enables sitelinks searchbox) */}
+        {/* ✅ Structured data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -148,7 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AuthProvider>
         </ThemeProvider>
 
-        {/* ✅ GA loaded once, deferred — no duplicate */}
+        {/* ✅ GA4 — single property, lazyOnload to not block rendering */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="lazyOnload"
