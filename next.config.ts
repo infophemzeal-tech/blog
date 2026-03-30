@@ -1,56 +1,32 @@
-import type { NextConfig } from "next"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  compress: true,
+  swcMinify: true,
 
-const nextConfig: NextConfig = {
-  allowedDevOrigins: [
-    "blog-iaiu5x69m-infophemzeal-techs-projects.vercel.app",
-  ],
+  // ✅ REMOVE the redirects() block entirely — Vercel handles this
+  // ✅ Keep only headers
 
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**.supabase.co",
-        pathname: "/storage/v1/object/public/**",
-      },
-    ],
-  },
-
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ["@tailwindcss/typography"],
-  },
-
-  compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
-  },
-
-  async redirects() {
+  async headers() {
     return [
-      // ✅ Force www → non-www
       {
         source: "/:path*",
-        has: [{ type: "host", value: "www.nairaly.com" }],
-        destination: "https://nairaly.com/:path*",
-        permanent: true,
-      },
-
-      // ✅ Strip ?topic=... → root
-      {
-        source: "/",
-        has: [{ type: "query", key: "topic" }],
-        destination: "/",
-        permanent: true,
-      },
-
-      // ✅ (Optional) strip ALL query strings → clean canonical
-      {
-        source: "/:path*",
-        has: [{ type: "query", key: ":path*" }],
-        destination: "/:path*",
-        permanent: true,
+        headers: [
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+        ],
       },
     ]
   },
 }
 
-export default nextConfig
+module.exports = nextConfig

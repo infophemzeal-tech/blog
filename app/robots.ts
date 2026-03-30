@@ -10,25 +10,15 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: ["/"],
         disallow: [
-          // Auth & user flows
-          "/auth/",
-          "/api/",
-
-          // App UI — not indexable content
-          "/dashboard/",
-          "/settings/",
-          "/admin/",
-          "/private/",
-          "/preview/",
-
-          // ✅ Block ALL query strings (topic, q, filter, etc)
-          "/*?*",
-
-          // Thin/legal pages — waste crawl budget
-          "/privacy",
-          "/terms",
-          "/cookies",
-          "/help",
+           "/auth/",
+  "/api/",
+  "/dashboard/",
+  "/settings/",
+  "/admin/",
+  "/private/",
+  "/preview/",
+  "/*?*",
+  "/help",
         ],
       },
 
