@@ -31,7 +31,6 @@ export default function Feed({ activeTab, activeTopic }: Props) {
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
-  // ✅ fetchArticles at component level, not inside useEffect
   const fetchArticles = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -98,12 +97,10 @@ export default function Feed({ activeTab, activeTopic }: Props) {
     setLoading(false)
   }, [activeTab, activeTopic])
 
-  // ✅ useEffect just calls fetchArticles
   useEffect(() => {
     fetchArticles()
   }, [fetchArticles])
 
-  // ✅ Memoized search filtering
   const filteredArticles = useMemo(() => {
     if (!searchKeyword.trim()) return articles
     const keyword = searchKeyword.toLowerCase()
@@ -114,39 +111,37 @@ export default function Feed({ activeTab, activeTopic }: Props) {
     )
   }, [articles, searchKeyword])
 
-  // Loading State
   if (loading) {
     return (
-      <div className="space-y-12 py-8">
+      <div className="space-y-8 py-6">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="animate-pulse flex flex-col md:flex-row gap-6 border-b border-stone-100 dark:border-stone-800 pb-12 last:border-none last:pb-0"
+            className="animate-pulse flex flex-col md:flex-row gap-4 md:gap-6 border-b border-stone-100 dark:border-stone-800 pb-8 last:border-none last:pb-0"
           >
-            <div className="flex-1 space-y-5">
-              <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-28" />
-              <div className="h-9 bg-stone-200 dark:bg-stone-800 rounded-lg w-11/12" />
-              <div className="h-5 bg-stone-200 dark:bg-stone-800 rounded w-4/5" />
-              <div className="flex gap-4 pt-4">
-                <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-20" />
-                <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-16" />
+            <div className="flex-1 space-y-3">
+              <div className="h-3 bg-stone-200 dark:bg-stone-800 rounded w-24" />
+              <div className="h-8 bg-stone-200 dark:bg-stone-800 rounded-lg w-11/12" />
+              <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-3/4" />
+              <div className="flex gap-3 pt-3">
+                <div className="h-3 bg-stone-200 dark:bg-stone-800 rounded w-16" />
+                <div className="h-3 bg-stone-200 dark:bg-stone-800 rounded w-12" />
               </div>
             </div>
-            <div className="w-full md:w-80 h-56 bg-stone-200 dark:bg-stone-800 rounded-3xl shrink-0" />
+            <div className="w-full md:w-64 h-44 bg-stone-200 dark:bg-stone-800 rounded-2xl shrink-0" />
           </div>
         ))}
       </div>
     )
   }
 
-  // Error State
   if (error) {
     return (
-      <div className="text-center py-20">
+      <div className="text-center py-16">
         <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
         <button
-          onClick={fetchArticles}  // ✅ no more window.location.reload()
-          className="px-6 py-3 bg-stone-900 text-white dark:bg-white dark:text-stone-900 rounded-2xl text-sm font-medium hover:bg-black dark:hover:bg-stone-100 transition"
+          onClick={fetchArticles}
+          className="px-5 py-2.5 bg-stone-900 text-white dark:bg-white dark:text-stone-900 rounded-xl text-sm font-medium hover:bg-black dark:hover:bg-stone-100 transition"
         >
           Retry Loading
         </button>
@@ -154,28 +149,27 @@ export default function Feed({ activeTab, activeTopic }: Props) {
     )
   }
 
-  // Feed
   return (
     <div className="flex flex-col">
       {filteredArticles.length > 0 ? (
-        <div className="space-y-16">
+        <div className="space-y-10">
           {filteredArticles.map((article, index) => (
             <ArticleCard
               key={article.id}
               article={article}
-              priority={index === 0}  // ✅ first card loads eagerly
+              priority={index === 0}
             />
           ))}
         </div>
       ) : (
-        <div className="text-center py-28">
-          <div className="mx-auto w-16 h-16 bg-stone-100 dark:bg-stone-900 rounded-full flex items-center justify-center mb-6">
+        <div className="text-center py-20">
+          <div className="mx-auto w-14 h-14 bg-stone-100 dark:bg-stone-900 rounded-full flex items-center justify-center mb-5">
             🔍
           </div>
-          <h3 className="text-2xl font-medium text-stone-900 dark:text-white mb-2">
+          <h3 className="text-xl font-medium text-stone-900 dark:text-white mb-2">
             No articles found
           </h3>
-          <p className="text-stone-500 dark:text-stone-400 max-w-md mx-auto">
+          <p className="text-stone-500 dark:text-stone-400 max-w-md mx-auto text-sm">
             {searchKeyword
               ? `We couldn't find any articles matching "${searchKeyword}"`
               : "No articles available in this section yet."}

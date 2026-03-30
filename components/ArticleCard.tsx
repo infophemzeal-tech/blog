@@ -10,13 +10,18 @@ import { createClient } from "@/lib/supabase/client"
 
 type ArticleCardProps = {
   article: Article
-  priority?: boolean  // ✅ pass true for first card to fix LCP
+  priority?: boolean
+  compact?: boolean
 }
 
-export default function ArticleCard({ article, priority = false }: ArticleCardProps) {
+export default function ArticleCard({
+  article,
+  priority = false,
+  compact = false,
+}: ArticleCardProps) {
   const [isAdmin, setIsAdmin] = useState(false)
   const supabase = createClient()
-  const router = useRouter()  // ✅ use router instead of window.location.reload
+  const router = useRouter()
 
   useEffect(() => {
     isSuperAdmin().then(setIsAdmin)
@@ -24,173 +29,202 @@ export default function ArticleCard({ article, priority = false }: ArticleCardPr
 
   const handleTogglePin = async () => {
     const { error } = await supabase
-      .from('articles')
+      .from("articles")
       .update({ is_pinned: !article.is_pinned })
-      .eq('id', article.id)
-    
-    if (!error) router.refresh()  // ✅ soft refresh, no full reload
+      .eq("id", article.id)
+    if (!error) router.refresh()
   }
 
   const handleDeactivate = async () => {
     if (!confirm("Are you sure you want to hide this article from the public?")) return
     const { error } = await supabase
-      .from('articles')
+      .from("articles")
       .update({ is_deactivated: true })
-      .eq('id', article.id)
-    
+      .eq("id", article.id)
     if (!error) router.refresh()
   }
 
   const handleBanUser = async () => {
     if (!confirm(`Ban ${article.author} from posting?`)) return
-
-    // ✅ Ban by author_id not full_name — more reliable
     const { error } = await supabase
-      .from('profiles')
+      .from("profiles")
       .update({ is_banned: true })
-      .eq('id', article.author_id)  // ✅ use id not full_name
-    
+      .eq("id", (article as any).author_id)
     if (!error) alert("User has been restricted.")
   }
 
-  return (
-    <div className="group flex flex-col py-6 border-b border-stone-100 dark:border-stone-800">
+  const viewCount = Number(article.views_count)
+  const formattedViews =
+    viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}K` : viewCount || 0
 
-      {/* Article Status Badges (Admin only) */}
+  return (
+    <article className="group relative py-2 border-t mb-0 mt-0 border-stone-100 dark:border-stone-800/60 last:border-b-0">
+      
+
+      {/* Admin status badges */}
       {isAdmin && (article.is_pinned || article.is_deactivated) && (
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-1 mb-0">
           {article.is_pinned && (
-            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+            <span className="text-[9px] bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 px-1.5 py-px rounded-sm font-bold uppercase tracking-wider">
               Pinned
             </span>
           )}
           {article.is_deactivated && (
-            <span className="text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-              Deactivated
+            <span className="text-[9px] bg-red-50 text-red-500 dark:bg-red-950 dark:text-red-400 px-1.5 py-px rounded-sm font-bold uppercase tracking-wider">
+              Hidden
             </span>
           )}
         </div>
       )}
 
-      <div className="flex items-start justify-between gap-3 sm:gap-6">
+      {/* Main row */}
+      <div className="flex items-start gap-2.5">
+
         {/* Left — content */}
-        <div className="flex-1 flex flex-col gap-2 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
 
-          {/* Author row */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="w-6 h-6 rounded-full bg-stone-800 dark:bg-stone-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
-              {article.authorInitial}
-            </div>
-            <span className="text-sm text-stone-600 dark:text-stone-400 truncate font-medium">
-              {article.author}
-            </span>
-            {article.publication && (
-              <span className="text-sm text-stone-400 dark:text-stone-500 hidden sm:inline font-medium">
-                in <span className="text-stone-600 dark:text-stone-400">{article.publication}</span>
-              </span>
-            )}
-          </div>
+          
 
-          {/* ✅ h3 not h2 — correct heading hierarchy below page h1 and section h2 */}
+          {/* Title */}
           <Link href={`/article/${article.slug}`}>
-            <h3 className="font-serif text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-snug hover:underline cursor-pointer">
+            <h3 className="font-serif text-[14px] sm:text-[14px] font-bold text-stone-900 dark:text-white leading-[1.35] hover:text-stone-600 dark:hover:text-stone-300 transition-colors line-clamp-2">
               {article.title}
             </h3>
           </Link>
 
-          {/* Subtitle */}
-          <p className="text-sm text-stone-500 dark:text-stone-400 leading-relaxed line-clamp-2 hidden sm:block font-serif">
-            {article.subtitle}
-          </p>
+          {/* Subtitle — desktop only */}
+          {article.subtitle && (
+            <p className="hidden sm:block text-[12px] text-stone-400 dark:text-stone-500 leading-snug line-clamp-2 font-serif mt-px">
+              {article.subtitle}
+            </p>
+          )}
 
-          {/* Bottom row */}
-          <div className="flex items-center gap-3 text-xs text-stone-400 dark:text-stone-500 mt-1 font-medium flex-wrap">
-            <span className="whitespace-nowrap">{article.date}</span>
+          {/* Meta row */}
+          <div className="flex items-center gap-2 mt-0">
+            <div
+              className="w-[14px] h-[14px] rounded-full bg-green-600 dark:bg-stone-500 flex items-center justify-center text-white shrink-0"
+              style={{ fontSize: "7px", fontWeight: 700, lineHeight: 1 }}
+              aria-hidden
+            >
+              {article.authorInitial}
+            </div>
+            <span className="text-[10px] text-stone-400 dark:text-stone-500 whitespace-nowrap leading-none">
+              {article.author}
+            </span>
+            <span className="text-[10px] text-stone-400 dark:text-stone-500 whitespace-nowrap leading-none">
+              {article.date}
+            </span>
+            
 
-            {/* Claps */}
-            <div className="flex items-center gap-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14.5 2.5c0-1.1-.9-2-2-2s-2 .9-2 2v7.5L9 8.5c-.8-.8-2-.8-2.8 0-.8.8-.8 2 0 2.8l5.3 5.3A6 6 0 0020 11.3V6.5c0-1.1-.9-2-2-2s-2 .9-2 2"/>
+            <div className="flex items-center gap-0.5 text-stone-400 dark:text-stone-500">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M14.5 2.5c0-1.1-.9-2-2-2s-2 .9-2 2v7.5L9 8.5c-.8-.8-2-.8-2.8 0-.8.8-.8 2 0 2.8l5.3 5.3A6 6 0 0020 11.3V6.5c0-1.1-.9-2-2-2s-2 .9-2 2" />
               </svg>
-              <span>{article.claps}</span>
+              <span className="text-[10px] leading-none">{article.claps}</span>
             </div>
 
-            {/* Views */}
-            <div className="flex items-center gap-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
+            <div className="flex items-center gap-0.5 text-stone-400 dark:text-stone-500">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
               </svg>
-              <span>
-                {Number(article.views_count) >= 1000
-                  ? `${(Number(article.views_count) / 1000).toFixed(1)}K`
-                  : article.views_count || 0}
-              </span>
+              <span className="text-[10px] leading-none">{formattedViews}</span>
             </div>
 
             {/* Bookmark */}
-            <div className="ml-auto flex items-center gap-3 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-              <button className="hover:text-stone-700 dark:hover:text-white transition-colors cursor-pointer">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-                </svg>
-              </button>
-            </div>
+            <button
+              className="ml-auto text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-300 transition-colors sm:opacity-0 sm:group-hover:opacity-100"
+              aria-label="Save article"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+              </svg>
+            </button>
           </div>
         </div>
 
         {/* Thumbnail */}
-<Link href={`/article/${article.slug}`} className="shrink-0">
-  <div className="relative w-24 h-16 sm:w-32 sm:h-20 rounded-lg overflow-hidden bg-stone-200 dark:bg-stone-700 hover:opacity-80 transition-opacity">
-    {article.coverImage ? (
-      <Image
-        src={article.coverImage}
-        alt={article.title}
-        fill
-        sizes="(max-width: 640px) 96px, 128px"
-        className="object-cover rounded-lg"
-        priority={priority}
-      />
-    ) : (
-      <div className="w-full h-full bg-stone-200 dark:bg-stone-700" />
-    )}
-  </div>
-</Link>
+        <Link
+          href={`/article/${article.slug}`}
+          className="shrink-0 self-start"
+          aria-label={`Read ${article.title}`}
+          tabIndex={-1}
+        >
+          <div className="relative w-[64px] h-[44px] sm:w-[88px] sm:h-[60px] rounded overflow-hidden bg-stone-100 dark:bg-stone-800 hover:opacity-75 transition-opacity">
+            {article.coverImage ? (
+              <Image
+                src={article.coverImage}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 64px, 88px"
+                className="object-cover"
+                priority={priority}
+              />
+            ) : (
+              <div className="w-full h-full bg-stone-200 dark:bg-stone-700" />
+            )}
+          </div>
+        </Link>
       </div>
 
-      {/* ADMIN CONTROL PANEL */}
+      {/* Admin panel */}
       {isAdmin && (
-        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-stone-50 dark:border-stone-800/50">
-          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-            Admin Actions:
+        <div className="flex items-center gap-1.5 mt-0 pt-0 border-t border-stone-50 dark:border-stone-800/50"> 
+          <span className="text-[9px] font-bold text-stone-300 dark:text-stone-600 uppercase tracking-widest shrink-0">
+            Admin:
           </span>
-
           <button
             onClick={handleTogglePin}
-            className={`text-xs font-medium px-2 py-1 rounded transition-colors ${
+            className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-px rounded transition-colors ${
               article.is_pinned
                 ? "bg-blue-600 text-white"
-                : "text-blue-600 bg-blue-50 hover:bg-blue-100"
+                : "text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900 dark:text-blue-400"
             }`}
+            aria-pressed={article.is_pinned}
           >
-            {article.is_pinned ? "📍 Unpin" : "📌 Pin Story"}
+            {article.is_pinned ? (
+              <>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <line x1="2" y1="2" x2="22" y2="22" />
+                  <line x1="12" y1="17" x2="12" y2="22" />
+                  <path d="M9 9v8h6V9" />
+                  <path d="M12 2v2" />
+                </svg>
+                Unpin
+              </>
+            ) : (
+              <>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <line x1="12" y1="17" x2="12" y2="22" />
+                  <path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V17z" />
+                </svg>
+                Pin
+              </>
+            )}
           </button>
-
           <button
             onClick={handleDeactivate}
-            className="text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors"
+            className="flex items-center gap-1 text-[10px] font-medium text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-400 px-1.5 py-px rounded transition-colors"
           >
-            🚫 Deactivate
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
+            Hide
           </button>
-
           <button
             onClick={handleBanUser}
-            className="text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 px-2 py-1 rounded transition-colors"
+            className="flex items-center gap-1 text-[10px] font-medium text-stone-500 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 px-1.5 py-px rounded transition-colors"
           >
-            🔨 Ban Author
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M4.93 4.93l14.14 14.14" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+            Ban
           </button>
         </div>
       )}
-    </div>
+    </article>
   )
 }
