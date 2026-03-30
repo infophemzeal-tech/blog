@@ -2,21 +2,22 @@ import type { Metadata, Viewport } from "next"
 import { Geist } from "next/font/google"
 import Script from "next/script"
 import "./globals.css"
-import { getSiteMetadata } from "@/lib/metadata"
 import ThemeProvider from "@/components/ThemeProvider"
 import SearchProvider from "@/components/SearchProvider"
 import AuthProvider from "@/components/AuthProvider"
 import CookieConsent from "@/components/CookieConsent"
-import GoogleAnalytics from "@/components/GoogleAnalytics"
-import Footer from "@/components/Footer";
+import Footer from "@/components/Footer"
 
 const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
   weight: ["400", "500", "600", "700"],
   display: "swap",
-  preload: true, 
+  preload: true,
 })
+
+const GA_ID = "G-HGYRG1B4DJ"
+const SITE_URL = "https://nairaly.com"
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -27,46 +28,110 @@ export const viewport: Viewport = {
   ],
 }
 
+// ✅ All SEO handled here — no manual <head> tags needed
 export async function generateMetadata(): Promise<Metadata> {
-  return getSiteMetadata()
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: "Nairaly — Stories for curious readers and writers",
+      template: "%s | Nairaly",
+    },
+    description:
+      "A community of curious readers and writers sharing stories, insights, and perspectives from Nigeria and beyond.",
+    alternates: {
+      canonical: "/", // resolves to https://nairaly.com/
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-snippet": -1,
+        "max-image-preview": "large",
+        "max-video-preview": -1,
+      },
+    },
+    openGraph: {
+      type: "website",
+      url: SITE_URL,
+      siteName: "Nairaly",
+      title: "Nairaly — Stories for curious readers and writers",
+      description:
+        "A community of curious readers and writers sharing stories, insights, and perspectives from Nigeria and beyond.",
+      images: [
+        {
+          url: `${SITE_URL}/og-image.png`, // make sure this exists!
+          width: 1200,
+          height: 630,
+          alt: "Nairaly",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: "@nairaly",
+      title: "Nairaly — Stories for curious readers and writers",
+      description:
+        "A community of curious readers and writers sharing stories, insights, and perspectives from Nigeria and beyond.",
+      images: [`${SITE_URL}/og-image.png`],
+    },
+  }
+}
+
+// ✅ Structured data — clean and correct canonical URL
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Nairaly",
+  url: SITE_URL,
+  logo: `${SITE_URL}/logo-sq.png`,
+  description: "A community of curious readers and writers in Nigeria",
+  sameAs: [
+    "https://twitter.com/nairaly",
+    "https://instagram.com/nairaly",
+  ],
+  address: {
+    "@type": "PostalAddress",
+    addressCountry: "NG",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    url: SITE_URL,
+  },
+}
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Nairaly",
+  url: SITE_URL,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* ✅ preconnect so font/CSS fetches start immediately */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-
-        {/* ✅ DNS prefetch for GA — doesn't block, just warms the connection */}
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-
-        {/* ✅ Organization structured data */}
+        {/* ✅ Structured data — Organization + WebSite (enables sitelinks searchbox) */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "Nairaly",
-              url: "https://nairaly.com",
-              logo: "https://nairaly.com/logo-sq.png",
-              description: "A community of curious readers and writers in Nigeria",
-              sameAs: [
-                // "https://twitter.com/nairaly",
-                // "https://instagram.com/nairaly",
-              ],
-              address: {
-                "@type": "PostalAddress",
-                addressCountry: "NG",
-              },
-              contactPoint: {
-                "@type": "ContactPoint",
-                contactType: "customer service",
-                url: "https://nairaly.com",
-              },
-            }).replace(/</g, "\\u003c"),
+            __html: JSON.stringify(organizationSchema).replace(/</g, "\\u003c"),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema).replace(/</g, "\\u003c"),
           }}
         />
       </head>
@@ -77,16 +142,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <SearchProvider>
               <div className="flex-1">{children}</div>
-              <GoogleAnalytics />
               <CookieConsent />
               <Footer />
             </SearchProvider>
           </AuthProvider>
         </ThemeProvider>
 
-        {/* ✅ GA deferred — lazyOnload fires after page is fully idle */}
+        {/* ✅ GA loaded once, deferred — no duplicate */}
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-HGYRG1B4DJ"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="lazyOnload"
         />
         <Script id="google-analytics" strategy="lazyOnload">
@@ -94,9 +158,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-HGYRG1B4DJ', {
-              page_path: window.location.pathname,
-            });
+            gtag('config', '${GA_ID}', { page_path: window.location.pathname });
           `}
         </Script>
       </body>

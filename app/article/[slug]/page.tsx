@@ -13,6 +13,10 @@ import type { Article } from "@/data/articles"
 import ClapButton from "@/components/ClapButton"
 import { AudioReader, CommentsSection, ViewTracker } from "@/components/DeferredComponents"
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const SITE_URL = "https://nairaly.com"
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AuthorProfile {
@@ -83,7 +87,7 @@ const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzIwIiBoZWlnaHQ9IjQwNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTdlNWUyIi8+PC9zdmc+"
 
 const RELATED_SELECT =
-  "id, title, subtitle, slug, publication, read_time, claps_count, comments_count, cover_image, created_at, profiles ( full_name )"
+  "id, title, subtitle, slug, publication, read_time, claps_count, comments_count, cover_image, created_at, tags, profiles ( full_name )"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -96,54 +100,88 @@ function getWordCount(html: string | null): number {
   return html.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length
 }
 
+function getDescription(article: Pick<ArticleResponse, "subtitle" | "title">): string {
+  return article.subtitle
+    ? article.subtitle.substring(0, 160)
+    : `${article.title} — Read on Nairaly.`
+}
+
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const supabase = await createClient()
 
-  const { data: article } = (await supabase
+  const { data: article } = await supabase
     .from("articles")
-    .select("title, subtitle, cover_image, is_deactivated, published, created_at, updated_at, slug, profiles ( full_name )")
+    .select("title, subtitle, cover_image, is_deactivated, published, created_at, updated_at, slug, tags, author_id, profiles ( full_name )")
     .eq("slug", slug)
-    .single()) as { data: ArticleResponse | null }
+    .single() as { data: ArticleResponse | null }
 
   if (!article || article.is_deactivated || !article.published) {
-    return { title: "Article Not Found", robots: { index: false } }
+    return {
+      title: "Article Not Found",
+      robots: { index: false, follow: false },
+    }
   }
 
   const author = getAuthorName(article.profiles)
-  const description = article.subtitle
-    ? article.subtitle.substring(0, 160)
-    : `${article.title} — Read on Nairaly.`
-  const url = `https://nairaly.com/article/${article.slug}`
-  const imageUrl = article.cover_image || "https://nairaly.com/og-default.jpg"
+  const description = getDescription(article)
+  const url = `${SITE_URL}/article/${article.slug}`
+  const imageUrl = article.cover_image || `${SITE_URL}/og-default.jpg`
 
+  // ✅ Use actual article tags for keywords, not hardcoded conditionals
   const keywords = [
-    "Nairaly", "Nigeria", "Nigerian writers",
-    article.title.toLowerCase().includes("remote") ? "remote jobs 2026" : "",
-    "Nigerians in tech",
+    "Nairaly",
+    "Nigeria",
+    "Nigerian writers",
+    ...(article.tags ?? []),
   ].filter(Boolean)
 
   return {
+    // ✅ metadataBase ensures relative URLs resolve correctly
+    metadataBase: new URL(SITE_URL),
     title: article.title,
     description,
-    keywords: keywords.join(", "),
-    authors: [{ name: author }],
-    alternates: { canonical: url },
+    keywords,
+    authors: [
+      {
+        name: author,
+        // ✅ Author URL for entity linking
+        url: `${SITE_URL}/author/${article.author_id}`,
+      },
+    ],
+    alternates: {
+      canonical: url,
+    },
+    // ✅ Explicit robots on all published articles
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       title: article.title,
       description,
       url,
       siteName: "Nairaly",
-      locale: "en_NG",
+      // ✅ Removed en_NG — not a standard OG locale
       type: "article",
       publishedTime: article.created_at,
       modifiedTime: article.updated_at || article.created_at,
+      authors: [`${SITE_URL}/author/${article.author_id}`],
+      tags: article.tags ?? [],
       images: [{ url: imageUrl, width: 1200, height: 630, alt: article.title }],
     },
     twitter: {
       card: "summary_large_image",
+      site: "@nairaly",
       title: article.title,
       description,
       images: [imageUrl],
@@ -151,7 +189,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export const revalidate = 1800
+export const revalidate = 3600
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -159,7 +197,7 @@ export default async function Page({ params }: Props) {
   const { slug } = await params
   const supabase = await createClient()
 
-  const [articleResult, relatedResult] = await Promise.all([
+  const [articleResult, tagRelatedResult] = await Promise.all([
     supabase
       .from("articles")
       .select("*, profiles ( full_name, avatar_url, bio )")
@@ -178,26 +216,24 @@ export default async function Page({ params }: Props) {
   ])
 
   const article = articleResult.data as ArticleResponse | null
-  const tagRelatedRaw = relatedResult.data as RelatedArticle[] | null
-
   if (!article) notFound()
 
-  // Related articles
-  const pool = tagRelatedRaw ?? []
-  let finalRelated = pool.slice(0, 3)
-  const primaryTag = article.tags?.[0] ?? null
+  const tagRelatedRaw = tagRelatedResult.data as RelatedArticle[] | null
 
-  if (primaryTag && finalRelated.length < 3) {
-    const exclude = [slug, ...finalRelated.map((a) => a.slug)]
-    const { data: backfill } = (await supabase
-      .from("articles")
-      .select(RELATED_SELECT)
-      .eq("published", true)
-      .eq("is_deactivated", false)
-      .not("slug", "in", `(${exclude.map((s) => `"${s}"`).join(",")})`)
-      .order("created_at", { ascending: false })
-      .limit(3 - finalRelated.length)) as { data: RelatedArticle[] | null }
-    finalRelated = [...finalRelated, ...(backfill ?? [])]
+  // ✅ Prioritize articles sharing the primary tag, then backfill with recents
+  const primaryTag = article.tags?.[0] ?? null
+  const pool = tagRelatedRaw ?? []
+
+  const tagMatches = primaryTag
+  ? pool.filter((a: any) => a.tags?.includes(primaryTag))
+  : pool
+
+  let finalRelated = tagMatches.slice(0, 3)
+
+  if (finalRelated.length < 3) {
+    const exclude = new Set([slug, ...finalRelated.map((a) => a.slug)])
+    const backfill = pool.filter((a) => !exclude.has(a.slug)).slice(0, 3 - finalRelated.length)
+    finalRelated = [...finalRelated, ...backfill]
   }
 
   // Derived values
@@ -210,6 +246,9 @@ export default async function Page({ params }: Props) {
   const safeBody = sanitizeHtml(article.body || "", SANITIZE_OPTIONS)
   const authorHref = `/author/${article.author_id}`
   const excerpt = article.subtitle || article.title
+  const description = getDescription(article)
+  const imageUrl = article.cover_image || `${SITE_URL}/og-default.jpg`
+  const articleUrl = `${SITE_URL}/article/${article.slug}`
 
   const relatedTransformed: Article[] = finalRelated.map((a) => ({
     id: a.id,
@@ -227,41 +266,62 @@ export default async function Page({ params }: Props) {
     coverImage: a.cover_image || "",
   }))
 
+  // ✅ Full BlogPosting schema with ImageObject and inLanguage
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: article.title,
+    description,
+    // ✅ ImageObject instead of plain array — passes Google rich results validator
+    image: {
+      "@type": "ImageObject",
+      url: imageUrl,
+      width: 1200,
+      height: 630,
+    },
+    datePublished: dateISO,
+    dateModified: article.updated_at
+      ? new Date(article.updated_at).toISOString()
+      : dateISO,
+    // ✅ inLanguage for Nigerian English content
+    inLanguage: "en-NG",
+    author: {
+      "@type": "Person",
+      name: authorName,
+      url: `${SITE_URL}${authorHref}`,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Nairaly",
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/logo-sq.png`,
+        width: 512,
+        height: 512,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": articleUrl,
+    },
+    url: articleUrl,
+    wordCount: getWordCount(article.body),
+    keywords: article.tags?.join(", ") || "Nigeria, tech, culture",
+    articleSection: article.tags?.[0] || "General",
+    // ✅ Comment count signals engagement to Google
+    commentCount: article.comments_count,
+  }
+
   return (
     <main className="min-h-screen bg-white dark:bg-stone-950 selection:bg-green-100 dark:selection:bg-green-900/40">
       <ReadingProgress />
       <ViewTracker articleId={article.id} />
 
-      {/* JSON-LD */}
+      {/* ✅ JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            headline: article.title,
-            description: excerpt,
-            image: [article.cover_image || "https://nairaly.com/og-default.jpg"],
-            datePublished: dateISO,
-            dateModified: article.updated_at || dateISO,
-            author: {
-              "@type": "Person",
-              name: authorName,
-              url: `https://nairaly.com${authorHref}`,
-            },
-            publisher: {
-              "@type": "Organization",
-              name: "Nairaly",
-              logo: { "@type": "ImageObject", url: "https://nairaly.com/logo-sq.png" },
-            },
-            mainEntityOfPage: {
-              "@type": "WebPage",
-              "@id": `https://nairaly.com/article/${article.slug}`,
-            },
-            wordCount: getWordCount(article.body),
-            keywords: article.tags?.join(", ") || "Nigeria, tech, remote jobs",
-            articleSection: article.tags?.[0] || "Technology",
-          }).replace(/</g, "\\u003c"),
+          __html: JSON.stringify(articleSchema).replace(/</g, "\\u003c"),
         }}
       />
 
@@ -272,7 +332,6 @@ export default async function Page({ params }: Props) {
         {/* ── Header ── */}
         <header className="mb-8 sm:mb-10">
 
-          {/* Publication badge */}
           {article.publication && (
             <div className="mb-4">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900">
@@ -282,19 +341,16 @@ export default async function Page({ params }: Props) {
             </div>
           )}
 
-          {/* Title — smaller on mobile */}
           <h1 className="font-serif text-[1.9rem] sm:text-[2.8rem] lg:text-[3.2rem] font-bold text-stone-900 dark:text-white leading-[1.1] mb-4 sm:mb-6 tracking-tight">
             {article.title}
           </h1>
 
-          {/* Subtitle */}
           {article.subtitle && (
             <p className="font-serif text-lg sm:text-xl text-stone-500 dark:text-stone-400 leading-snug mb-6 sm:mb-8 font-light italic">
               {article.subtitle}
             </p>
           )}
 
-          {/* Author row — stacks gracefully on mobile */}
           <div className="flex flex-wrap items-center justify-between gap-3 py-4 sm:py-6 border-y border-stone-100 dark:border-stone-900">
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <Link
@@ -339,7 +395,7 @@ export default async function Page({ params }: Props) {
           </div>
         </header>
 
-        {/* ── Hero image — full bleed on mobile ── */}
+        {/* ── Hero image ── */}
         {article.cover_image && (
           <figure className="mb-8 sm:mb-12 -mx-4 sm:-mx-6">
             <div className="relative aspect-[16/9] w-full bg-stone-100 dark:bg-stone-900 sm:rounded-xl overflow-hidden shadow-lg sm:shadow-2xl">
@@ -359,10 +415,8 @@ export default async function Page({ params }: Props) {
           </figure>
         )}
 
-        {/* ── Audio reader ── */}
         <AudioReader title={article.title} body={article.body || ""} authorName={authorName} />
 
-        {/* ── Body — tighter font size on mobile ── */}
         <section
           className="
             prose prose-stone dark:prose-invert max-w-none
@@ -382,7 +436,7 @@ export default async function Page({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: safeBody }}
         />
 
-        {/* ── Clap + Share bar ── */}
+        {/* ── Clap + Share ── */}
         <div className="mt-10 sm:mt-16 flex items-center justify-between py-6 sm:py-8 border-y border-stone-100 dark:border-stone-900">
           <ClapButton articleId={article.id} initialClaps={article.claps_count} />
           <div className="flex items-center gap-2 sm:gap-3">
@@ -420,7 +474,6 @@ export default async function Page({ params }: Props) {
           </div>
         </div>
 
-        {/* ── Comments ── */}
         <CommentsSection articleId={article.id} initialCount={article.comments_count} />
       </article>
 

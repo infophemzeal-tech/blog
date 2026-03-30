@@ -17,9 +17,7 @@ const nextConfig: NextConfig = {
 
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: [
-      "@tailwindcss/typography",
-    ],
+    optimizePackageImports: ["@tailwindcss/typography"],
   },
 
   compiler: {
@@ -28,11 +26,28 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      // ✅ Force www → non-www
       {
         source: "/:path*",
         has: [{ type: "host", value: "www.nairaly.com" }],
         destination: "https://nairaly.com/:path*",
-        permanent: true,  // 308
+        permanent: true,
+      },
+
+      // ✅ Strip ?topic=... → root
+      {
+        source: "/",
+        has: [{ type: "query", key: "topic" }],
+        destination: "/",
+        permanent: true,
+      },
+
+      // ✅ (Optional) strip ALL query strings → clean canonical
+      {
+        source: "/:path*",
+        has: [{ type: "query", key: ":path*" }],
+        destination: "/:path*",
+        permanent: true,
       },
     ]
   },
