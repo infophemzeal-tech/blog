@@ -332,73 +332,70 @@ export default async function Page({ params }: Props) {
 
       <Navbar />
 
-      <article className="max-w-[680px] mx-auto px-4 sm:px-6 pt-8 sm:pt-14 pb-16">
+      <article className="max-w-[680px] mx-auto px-4 sm:px-6 pt-6 sm:pt-14 pb-12">
+  {/* ── Header ── */}
+  <header className="mb-6 sm:mb-10">
+    {article.publication && (
+      <div className="mb-3">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900">
+          <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+          {article.publication}
+        </span>
+      </div>
+    )}
 
-        {/* ── Header ── */}
-        <header className="mb-8 sm:mb-10">
+    <h1 className="font-serif text-[1.45rem] sm:text-[1.7rem] md:text-[2.2rem] lg:text-[2.6rem] font-bold text-stone-900 dark:text-white leading-[1.08] mb-3 sm:mb-6 tracking-tight">
+      {article.title}
+    </h1>
 
-          {article.publication && (
-            <div className="mb-4">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900">
-                <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                {article.publication}
-              </span>
+    {article.subtitle && (
+      <p className="font-serif text-sm sm:text-base text-stone-500 dark:text-stone-400 leading-snug mb-4 sm:mb-8 font-light italic">
+        {article.subtitle}
+      </p>
+    )}
+
+    <div className="flex flex-wrap items-center justify-between gap-2 py-3 sm:py-6 border-y border-stone-100 dark:border-stone-900">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <Link
+          href={authorHref}
+          className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-stone-100 dark:bg-stone-900 shrink-0 shadow-inner group"
+        >
+          {article.profiles?.avatar_url ? (
+            <Image
+              src={article.profiles.avatar_url}
+              alt={authorName}
+              fill
+              sizes="36px 48px"
+              className="object-cover transition-transform group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-green-600 text-white font-bold text-sm">
+              {authorInitial}
             </div>
           )}
+        </Link>
 
-          <h1 className="font-serif text-[1.7rem] sm:text-[2.2rem] lg:text-[2.6rem]  font-bold text-stone-900 dark:text-white leading-[1.1] mb-4 sm:mb-6 tracking-tight">
-            {article.title}
-          </h1>
-
-          {article.subtitle && (
-            <p className="font-serif text-base sm:text-lg  text-stone-500 dark:text-stone-400 leading-snug mb-6 sm:mb-8 font-light italic">
-              {article.subtitle}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center justify-between gap-3 py-4 sm:py-6 border-y border-stone-100 dark:border-stone-900">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <Link
-                href={authorHref}
-                className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-stone-100 dark:bg-stone-900 shrink-0 shadow-inner group"
-              >
-                {article.profiles?.avatar_url ? (
-                  <Image
-                    src={article.profiles.avatar_url}
-                    alt={authorName}
-                    fill
-                    sizes="48px"
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-green-600 text-white font-bold text-sm">
-                    {authorInitial}
-                  </div>
-                )}
-              </Link>
-              <div className="flex flex-col text-sm min-w-0">
-                <Link
-                  href={authorHref}
-                  className="font-bold text-stone-900 dark:text-white truncate hover:text-green-600 transition-colors"
-                >
-                  {authorName}
-                </Link>
-                <div className="flex items-center gap-1.5 text-stone-400 text-xs mt-0.5">
-                  <time dateTime={dateISO}>{dateStr}</time>
-                  <span>·</span>
-                  <span>{article.read_time || "5 min"} read</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <ArticleActions
-                authorId={article.author_id}
-                articleId={article.id}
-                slug={article.slug}
-              />
-            </div>
+        <div className="flex flex-col text-xs sm:text-sm min-w-0">
+          <Link
+            href={authorHref}
+            className="font-bold text-stone-900 dark:text-white truncate hover:text-green-600 transition-colors"
+          >
+            {authorName}
+          </Link>
+          <div className="flex items-center gap-1 text-stone-400 text-[11px] sm:text-xs mt-0.5">
+            <time dateTime={dateISO}>{dateStr}</time>
+            <span>·</span>
+            <span>{article.read_time || "5 min"} read</span>
           </div>
-        </header>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        <ArticleActions authorId={article.author_id} articleId={article.id} slug={article.slug} />
+      </div>
+    </div>
+  </header>
+
 
         {/* ── Hero image ── */}
         {article.cover_image && (
@@ -425,15 +422,15 @@ export default async function Page({ params }: Props) {
         <section
   className="
     prose prose-stone dark:prose-invert max-w-none
-    text-[15px] sm:text-[17px] lg:text-[18px]
-    leading-[1.75] sm:leading-[1.8]
+    text-[14px] sm:text-[16px] lg:text-[18px]
+    leading-[1.6] sm:leading-[1.75]
     text-stone-800 dark:text-stone-200
     prose-headings:font-serif prose-headings:font-bold prose-headings:tracking-tight
-    prose-h2:text-xl sm:prose-h2:text-2xl
-    prose-p:mb-5 sm:prose-p:mb-6
-    prose-img:rounded-xl sm:prose-img:rounded-3xl
+    prose-h2:text-lg sm:prose-h2:text-2xl
+    prose-p:mb-4 sm:prose-p:mb-6
+    prose-img:rounded-lg sm:prose-img:rounded-3xl
     prose-blockquote:border-green-500
-    prose-blockquote:bg-stone-50/50 dark:prose-blockquote:bg-stone-900/30
+    prose-blockquote:bg-stone-50/40 dark:prose-blockquote:bg-stone-900/30
     prose-a:text-green-600 dark:prose-a:text-green-400
     prose-code:text-sm prose-code:bg-stone-100 dark:prose-code:bg-stone-800
     prose-pre:text-sm prose-pre:overflow-x-auto
@@ -441,45 +438,49 @@ export default async function Page({ params }: Props) {
   dangerouslySetInnerHTML={{ __html: safeBody }}
 />
 
-        {/* ── Clap + Share ── */}
-        <div className="mt-10 sm:mt-16 flex items-center justify-between py-6 sm:py-8 border-y border-stone-100 dark:border-stone-900">
-          <ClapButton articleId={article.id} initialClaps={article.claps_count} />
-          <div className="flex items-center gap-2 sm:gap-3">
-            <ShareButton title={article.title} slug={article.slug} />
-            <button className="p-2 sm:p-2.5 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors">
-              🔖
-            </button>
-          </div>
-        </div>
+{/* Clap + Share */}
+<div className="mt-8 sm:mt-12 flex items-center justify-between py-4 sm:py-6 border-y border-stone-100 dark:border-stone-900">
+  <ClapButton articleId={article.id} initialClaps={article.claps_count} />
+  <div className="flex items-center gap-2 sm:gap-3">
+    <ShareButton title={article.title} slug={article.slug} />
+    <button className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors text-sm">
+      🔖
+    </button>
+  </div>
+</div>
 
-        {/* ── Author bio card ── */}
-        <div className="my-8 sm:my-12 p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-stone-50/50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800">
-          <h3 className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-stone-400 mb-3 sm:mb-4">
-            The Writer
-          </h3>
-          <div className="flex gap-3 sm:gap-5">
-            <div className="font-serif text-2xl sm:text-3xl font-bold text-green-600 leading-none mt-1">"</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-base sm:text-lg text-stone-600 dark:text-stone-300 italic mb-4 sm:mb-6 leading-relaxed">
-                {article.profiles?.bio ||
-                  `${authorName} contributes deep insights into the evolution of Nigeria's digital and cultural landscape.`}
-              </p>
-              <div className="flex items-center justify-between gap-3">
-                <Link
-                  href={authorHref}
-                  className="text-sm font-bold border-b-2 border-green-600 hover:text-green-600 transition-colors"
-                >
-                  View more stories
-                </Link>
-                <button className="px-4 sm:px-5 py-1.5 sm:py-2 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-bold hover:bg-green-600 dark:hover:bg-green-500 dark:hover:text-white transition-colors">
-                  Follow
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+{/* Author bio card */}
+<div className="my-6 sm:my-10 p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-stone-50/50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800">
+  <h3 className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.18em] text-stone-400 mb-2 sm:mb-4">
+    The Writer
+  </h3>
 
-        <CommentsSection articleId={article.id} initialCount={article.comments_count} />
+  <div className="flex gap-3 sm:gap-5">
+    <div className="font-serif text-2xl sm:text-3xl font-bold text-green-600 leading-none mt-1">"</div>
+
+    <div className="flex-1 min-w-0">
+      <p className="text-sm sm:text-base text-stone-600 dark:text-stone-300 italic mb-3 sm:mb-5 leading-relaxed">
+        {article.profiles?.bio ||
+          `${authorName} contributes deep insights into the evolution of Nigeria's digital and cultural landscape.`}
+      </p>
+
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href={authorHref}
+          className="text-sm font-bold border-b-2 border-green-600 hover:text-green-600 transition-colors"
+        >
+          View more stories
+        </Link>
+
+        <button className="px-3 sm:px-4 py-1.5 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-bold hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
+          Follow
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<CommentsSection articleId={article.id} initialCount={article.comments_count} />
       </article>
 
       {/* ── Related articles ── */}
