@@ -1,70 +1,60 @@
-// app/sitemap.ts
-import { MetadataRoute } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { MetadataRoute } from "next"
+import { createClient } from "@/lib/supabase/server"
 
-export const revalidate = 1800
+export const revalidate = 3600
+
+const SITE_URL = "https://nairaly.com"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient()
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://nairaly.com').replace(/\/$/, '')
 
-  // Fetch published articles
+  // ── Articles ──────────────────────────────────────────────
   const { data: articles } = await supabase
-    .from('articles')
-    .select('slug, updated_at, created_at')
-    .eq('published', true)
-    .eq('is_deactivated', false)
-    .order('updated_at', { ascending: false, nullsFirst: false })
+    .from("articles")
+    .select("slug, updated_at, created_at")
+    .eq("published", true)
+    .eq("is_deactivated", false)
+    .order("updated_at", { ascending: false, nullsFirst: false })
 
-  // Static pages
-  const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: "https://nairaly.com", 
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.3,
-    },
-  ]
-
-  // Article pages
-  const articlePages: MetadataRoute.Sitemap = (articles || [])
-    .filter((post) => post.slug && post.slug.trim() !== '')
-    .map((post) => ({
-      url: `${baseUrl}/article/${post.slug.trim()}`,
-      lastModified: new Date(post.updated_at || post.created_at),
-      changeFrequency: 'weekly',
+  const articlePages: MetadataRoute.Sitemap = (articles ?? [])
+    .filter((a) => a.slug && a.slug.trim() !== "" && !a.slug.includes("?"))
+    .map((a) => ({
+      url: `${SITE_URL}/article/${a.slug.trim()}`,
+      lastModified: new Date(a.updated_at || a.created_at),
+      changeFrequency: "weekly" as const,
       priority: 0.75,
     }))
 
- const { data: authors } = await supabase
-  .from("profiles")
-  .select("id, updated_at")
-  .eq("is_banned", false)
+  // ── Author profiles ───────────────────────────────────────
+  const { data: authors } = await supabase
+    .from("profiles")
+    .select("id, updated_at")
+    .eq("is_banned", false)
 
-const authorPages: MetadataRoute.Sitemap = (authors || []).map((a) => ({
-  url: `${baseUrl}/author/${a.id}`,
-  lastModified: new Date(a.updated_at ?? new Date()),
-  changeFrequency: "weekly" as const,
-  priority: 0.5,
-}))
+  const authorPages: MetadataRoute.Sitemap = (authors ?? []).map((a) => ({
+    url: `${SITE_URL}/author/${a.id}`,
+    lastModified: new Date(a.updated_at ?? new Date()),
+    changeFrequency: "weekly" as const,
+    priority: 0.5,
+  }))
 
-return [...staticPages, ...articlePages, ...authorPages]
+  // ── Static pages ──────────────────────────────────────────
+  // ✅ No /privacy or /terms — low value, skip
+  // ✅ No /write or /authors — 404, skip
+  const staticPages: MetadataRoute.Sitemap = [
+    {
+      url: SITE_URL,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 1.0,
+    },
+    {
+      url: `${SITE_URL}/about`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    },
+  ]
+
+  return [...staticPages, ...articlePages, ...authorPages]
 }
