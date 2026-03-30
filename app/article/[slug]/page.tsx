@@ -77,8 +77,17 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     a: ["href", "target", "rel", "class"],
     "*": ["class"],
   },
+  // ✅ Fix 2 — auto-upgrade http:// to https:// and enforce noopener
   transformTags: {
-    a: sanitizeHtml.simpleTransform("a", { target: "_blank", rel: "noopener noreferrer" }),
+    a: (tagName, attribs) => ({
+      tagName: "a",
+      attribs: {
+        ...attribs,
+        href: attribs.href?.replace(/^http:\/\//i, "https://") ?? attribs.href,
+        target: "_blank",
+        rel: "noopener noreferrer",
+      },
+    }),
   },
   allowedIframeHostnames: ["www.youtube.com", "player.vimeo.com"],
 }
@@ -100,9 +109,10 @@ function getWordCount(html: string | null): number {
   return html.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length
 }
 
+// ✅ Fix 1 — description capped at 155 chars (was 160, Google truncates at ~155)
 function getDescription(article: Pick<ArticleResponse, "subtitle" | "title">): string {
   return article.subtitle
-    ? article.subtitle.substring(0, 160)
+    ? article.subtitle.substring(0, 155)
     : `${article.title} — Read on Nairaly.`
 }
 
@@ -130,7 +140,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = `${SITE_URL}/article/${article.slug}`
   const imageUrl = article.cover_image || `${SITE_URL}/og-default.jpg`
 
-  // ✅ Use actual article tags for keywords, not hardcoded conditionals
   const keywords = [
     "Nairaly",
     "Nigeria",
@@ -139,7 +148,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   ].filter(Boolean)
 
   return {
-    // ✅ metadataBase ensures relative URLs resolve correctly
     metadataBase: new URL(SITE_URL),
     title: article.title,
     description,
@@ -147,14 +155,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     authors: [
       {
         name: author,
-        // ✅ Author URL for entity linking
         url: `${SITE_URL}/author/${article.author_id}`,
       },
     ],
     alternates: {
       canonical: url,
     },
-    // ✅ Explicit robots on all published articles
     robots: {
       index: true,
       follow: true,
@@ -171,7 +177,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url,
       siteName: "Nairaly",
-      // ✅ Removed en_NG — not a standard OG locale
       type: "article",
       publishedTime: article.created_at,
       modifiedTime: article.updated_at || article.created_at,
@@ -189,6 +194,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+// ✅ Fix 3 — ISR ensures <title> is always in server-rendered HTML
 export const revalidate = 3600
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -225,14 +231,16 @@ export default async function Page({ params }: Props) {
   const pool = tagRelatedRaw ?? []
 
   const tagMatches = primaryTag
-  ? pool.filter((a: any) => a.tags?.includes(primaryTag))
-  : pool
+    ? pool.filter((a: any) => a.tags?.includes(primaryTag))
+    : pool
 
   let finalRelated = tagMatches.slice(0, 3)
 
   if (finalRelated.length < 3) {
     const exclude = new Set([slug, ...finalRelated.map((a) => a.slug)])
-    const backfill = pool.filter((a) => !exclude.has(a.slug)).slice(0, 3 - finalRelated.length)
+    const backfill = pool
+      .filter((a) => !exclude.has(a.slug))
+      .slice(0, 3 - finalRelated.length)
     finalRelated = [...finalRelated, ...backfill]
   }
 
@@ -272,7 +280,6 @@ export default async function Page({ params }: Props) {
     "@type": "BlogPosting",
     headline: article.title,
     description,
-    // ✅ ImageObject instead of plain array — passes Google rich results validator
     image: {
       "@type": "ImageObject",
       url: imageUrl,
@@ -283,7 +290,6 @@ export default async function Page({ params }: Props) {
     dateModified: article.updated_at
       ? new Date(article.updated_at).toISOString()
       : dateISO,
-    // ✅ inLanguage for Nigerian English content
     inLanguage: "en-NG",
     author: {
       "@type": "Person",
@@ -308,7 +314,6 @@ export default async function Page({ params }: Props) {
     wordCount: getWordCount(article.body),
     keywords: article.tags?.join(", ") || "Nigeria, tech, culture",
     articleSection: article.tags?.[0] || "General",
-    // ✅ Comment count signals engagement to Google
     commentCount: article.comments_count,
   }
 
