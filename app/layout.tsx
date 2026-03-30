@@ -1,3 +1,4 @@
+// app/layout.tsx (or RootLayout)
 import type { Metadata, Viewport } from "next"
 import { Geist } from "next/font/google"
 import Script from "next/script"
@@ -17,7 +18,6 @@ const geist = Geist({
   preload: true,
 })
 
-// ✅ Updated GA4 property ID
 const GA_ID = "G-HGYRG1B4DJ"
 const SITE_URL = "https://nairaly.com"
 
@@ -34,50 +34,17 @@ export async function generateMetadata(): Promise<Metadata> {
   return getSiteMetadata()
 }
 
-// ✅ Organization structured data
-const organizationSchema = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Nairaly",
-  url: SITE_URL,
-  logo: `${SITE_URL}/logo-sq.png`,
-  description: "A community of curious readers and writers in Nigeria",
-  sameAs: [
-    "https://twitter.com/nairaly",
-    "https://instagram.com/nairaly",
-  ],
-  address: {
-    "@type": "PostalAddress",
-    addressCountry: "NG",
-  },
-  contactPoint: {
-    "@type": "ContactPoint",
-    contactType: "customer service",
-    url: SITE_URL,
-  },
-}
-
-// ✅ WebSite schema — enables Google Sitelinks Searchbox
-const websiteSchema = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "Nairaly",
-  url: SITE_URL,
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
-    },
-    "query-input": "required name=search_term_string",
-  },
-}
+const organizationSchema = { /* ... */ }
+const websiteSchema = { /* ... */ }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* ✅ Structured data */}
+        {/* canonical */}
+        <link rel="canonical" href={SITE_URL} />
+
+        {/* Structured data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -91,8 +58,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
+
+      {/* mobile-first base text size: text-sm on phones, text-base on sm+ */}
       <body
-        className={`${geist.className} bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen antialiased`}
+        className={`${geist.className} text-sm sm:text-base bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen antialiased`}
       >
         <ThemeProvider>
           <AuthProvider>
@@ -104,11 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AuthProvider>
         </ThemeProvider>
 
-        {/* ✅ GA4 — single property, lazyOnload to not block rendering */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-          strategy="lazyOnload"
-        />
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="lazyOnload" />
         <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];

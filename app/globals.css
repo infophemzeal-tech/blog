@@ -13,3 +13,21 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+
+html {
+  font-size: 14px; /* mobile */
+}
+
+@media (min-width: 640px) {
+  html {
+    font-size: 16px; /* sm and up */
+  }
+}
+
+/* optional: slightly larger on large screens */
+@media (min-width: 1024px) {
+  html {
+    font-size: 17px;
+  }
+}
