@@ -22,7 +22,7 @@ const TagIcon = () => (
 const slugify = (t: string) =>
   t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80)
 
-const autoParagraph = (t: string) =>
+const autoParagraph = (t: string): string =>
   !/<[a-z][\s\S]*>/i.test(t)
     ? t.split(/\n\n+/).map(p => `<p>${p.trim()}</p>`).join("")
     : t
@@ -136,7 +136,7 @@ export default function WritePage() {
     e.target.style.height = `${e.target.scrollHeight}px`
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+ const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     const isDark = document.documentElement.classList.contains('dark')
@@ -144,7 +144,6 @@ export default function WritePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
 
-      // FIX 3 — setLoading(false) before redirect so state is clean
       if (!user) {
         setLoading(false)
         router.push("/auth/signin")
@@ -167,15 +166,16 @@ export default function WritePage() {
       const readTime = `${Math.max(1, Math.ceil(wordCount / 200))} min`
 
       // FIX 5 — collision-proof slug using random base-36 suffix
-      const suffix = Math.random().toString(36).slice(2, 8)
-      const slug = `${slugify(title)}-${suffix}`
+      const slug = slugify(title);
+      const finalSlug = slug || `post-${Date.now()}`; 
 
-      const { error: dbError } = await supabase.from("articles").insert({
+
+       const { error: dbError } = await supabase.from("articles").insert({
         title: title.trim(),
         subtitle: subtitle.trim() || null,
         body: finalBody,
         publication: publication.trim() || null,
-        slug,
+        slug: finalSlug, // Now just "how-great-ideas-really-happen"
         cover_image: coverImage || null,
         read_time: readTime,
         author_id: user.id,
@@ -190,10 +190,8 @@ export default function WritePage() {
       router.refresh()
 
     } catch (err: any) {
-      // FIX 2 — catch block handles all errors uniformly
       Swal.fire({ ...swalConfig(document.documentElement.classList.contains('dark')), icon: 'error', title: 'Error', text: err.message })
     } finally {
-      // FIX 2 — always resets loading, even on success (before navigation completes)
       setLoading(false)
     }
   }

@@ -34,7 +34,16 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
-
+async redirects() {
+  return [
+    {
+      // Matches any article slug ending in a 6-character base-36 suffix
+      source: "/article/:slug([a-z0-9-]+)-([a-z0-9]{6})",
+      destination: "/article/:slug",
+      permanent: true,
+    },
+  ]
+},
   // security headers only (redirects removed — handled at the platform edge)
   async headers() {
     return [
