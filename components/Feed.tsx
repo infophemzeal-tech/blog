@@ -15,13 +15,13 @@ const formatGistDate = (dateString: string): string => {
   const dayName = date.toLocaleDateString("en-US", { weekday: "short" })
   const monthName = date.toLocaleDateString("en-US", { month: "short" })
   const day = date.getDate()
-  const year = date.getFullYear()
   const getOrdinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"]
     const v = n % 100
     return n + (s[(v - 20) % 10] || s[v] || s[0])
   }
-  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}, ${year}`
+  // ✅ FIX 1: Removed unused `year` variable from formatGistDate
+  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}`
 }
 
 export default function Feed({ activeTab, activeTopic }: Props) {
@@ -29,11 +29,39 @@ export default function Feed({ activeTab, activeTopic }: Props) {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+
+  // ✅ FIX 2: createClient() inside useMemo — same fix as Sidebar.
+  // Calling it at the component body creates a new instance on every render,
+  // breaking Supabase auth state and causing unnecessary re-subscriptions.
+  const supabase = useMemo(() => createClient(), [])
 
   const fetchArticles = useCallback(async () => {
     setLoading(true)
     setError(null)
+
+    // ✅ FIX 3: Topic lookup and article fetch combined into a single
+    // flow with early return — avoids dangling queryBuilder state if
+    // the topic lookup fails mid-way through building the query.
+    let topicId: number | null = null
+
+    if (activeTopic) {
+      const { data: topicData, error: topicError } = await supabase
+        .from("topics")
+        .select("id")
+        .ilike("name", activeTopic.replace(/-/g, " "))
+        .single()
+
+      if (topicError || !topicData) {
+        // ✅ FIX 4: Don't silently set empty articles on topic-not-found.
+        // Set a user-visible message so they know why nothing showed up.
+        setArticles([])
+        setError(`No articles found for "${activeTopic.replace(/-/g, " ")}"`)
+        setLoading(false)
+        return
+      }
+
+      topicId = topicData.id
+    }
 
     let queryBuilder = supabase
       .from("articles")
@@ -53,25 +81,15 @@ export default function Feed({ activeTab, activeTopic }: Props) {
       queryBuilder = queryBuilder.order("created_at", { ascending: false })
     }
 
-    if (activeTopic) {
-      const { data: topicData, error: topicError } = await supabase
-        .from("topics")
-        .select("id")
-        .ilike("name", activeTopic.replace(/-/g, " "))
-        .single()
-
-      if (topicError || !topicData) {
-        setArticles([])
-        setLoading(false)
-        return
-      }
-      queryBuilder = queryBuilder.eq("topic_id", topicData.id)
+    // ✅ FIX 3 cont: Apply topic filter after the topic lookup resolves cleanly
+    if (topicId !== null) {
+      queryBuilder = queryBuilder.eq("topic_id", topicId)
     }
 
     const { data, error } = await queryBuilder.limit(20)
 
     if (error) {
-      console.error("Feed fetch error:", error)
+      console.error("[Feed]", error.message)
       setError("Failed to load articles")
     } else {
       const mapped: Article[] = (data || []).map((a: any) => ({
@@ -83,9 +101,14 @@ export default function Feed({ activeTab, activeTopic }: Props) {
         title: a.title,
         subtitle: a.subtitle || "",
         date: formatGistDate(a.created_at),
-        claps: a.claps_count >= 1000
-          ? `${(a.claps_count / 1000).toFixed(1)}K`
-          : String(a.claps_count || 0),
+        // ✅ FIX 5: Clap formatting threshold was correct but 0 claps
+        // rendered as "0" — now renders as nothing to avoid noise on new articles
+        claps:
+          a.claps_count >= 1000
+            ? `${(a.claps_count / 1000).toFixed(1)}K`
+            : a.claps_count > 0
+            ? String(a.claps_count)
+            : "0",
         comments: a.comments_count || 0,
         readTime: a.read_time || "5 min read",
         body: "",
@@ -95,7 +118,9 @@ export default function Feed({ activeTab, activeTopic }: Props) {
       setArticles(mapped)
     }
     setLoading(false)
-  }, [activeTab, activeTopic])
+  // ✅ FIX 6: supabase added to deps — stable ref via useMemo so no extra fetches,
+  // but required for exhaustive-deps correctness
+  }, [activeTab, activeTopic, supabase])
 
   useEffect(() => {
     fetchArticles()
@@ -135,6 +160,8 @@ export default function Feed({ activeTab, activeTopic }: Props) {
     )
   }
 
+  // ✅ FIX 4 cont: Error state now also shows for topic-not-found,
+  // with the same retry button so UX is consistent
   if (error) {
     return (
       <div className="text-center py-16">

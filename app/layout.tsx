@@ -1,4 +1,3 @@
-// app/layout.tsx (or RootLayout)
 import type { Metadata, Viewport } from "next"
 import { Geist } from "next/font/google"
 import Script from "next/script"
@@ -21,6 +20,7 @@ const geist = Geist({
 const GA_ID = "G-HGYRG1B4DJ"
 const SITE_URL = "https://nairaly.com"
 
+// ✅ Viewport
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -30,21 +30,54 @@ export const viewport: Viewport = {
   ],
 }
 
+// ✅ FIX: Proper metadata root config (NO canonical here)
 export async function generateMetadata(): Promise<Metadata> {
-  return getSiteMetadata()
+  const base = await getSiteMetadata()
+
+  return {
+    ...base,
+    metadataBase: new URL(SITE_URL), // ✅ critical for canonical resolution
+  }
 }
 
-const organizationSchema = { /* ... */ }
-const websiteSchema = { /* ... */ }
+// ✅ Organization Schema (Upgraded)
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Nairaly",
+  url: SITE_URL,
+  logo: {
+    "@type": "ImageObject",
+    url: `${SITE_URL}/logo-sq.png`,
+    width: 512,
+    height: 512,
+  },
+  sameAs: [
+    "https://twitter.com/nairaly",
+    "https://www.linkedin.com/company/nairaly",
+  ],
+}
+
+// ✅ Website Schema (Upgraded with SearchAction)
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Nairaly",
+  url: SITE_URL,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${SITE_URL}/search?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* canonical */}
-        <link rel="canonical" href={SITE_URL} />
+        {/* ❌ REMOVED canonical (fixes your SEO issue) */}
 
-        {/* Structured data */}
+        {/* ✅ Structured Data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -59,7 +92,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
 
-      {/* mobile-first base text size: text-sm on phones, text-base on sm+ */}
       <body
         className={`${geist.className} text-sm sm:text-base bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen antialiased`}
       >
@@ -73,13 +105,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AuthProvider>
         </ThemeProvider>
 
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="lazyOnload" />
+        {/* ✅ Google Analytics */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="lazyOnload"
+        />
         <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA_ID}', { page_path: window.location.pathname });
+            gtag('config', '${GA_ID}', {
+              page_path: window.location.pathname,
+            });
           `}
         </Script>
       </body>

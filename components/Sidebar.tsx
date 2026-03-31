@@ -1,9 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,7 +41,10 @@ const slugify = (text: string) =>
 function StaffPicks() {
   const [picks, setPicks] = useState<StaffPick[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient() // ✅ stable — createClient() is memoized
+
+  // ✅ FIX 1: createClient() inside useMemo so it's stable across renders
+  // but not recreated on every render cycle
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function fetchPicks() {
@@ -51,18 +53,21 @@ function StaffPicks() {
         .select("id, publication, author, title, slug, date")
         .order("id", { ascending: true })
         .limit(3)
-      if (error) console.error("StaffPicks error:", error.message, error.code, error.details, error.hint)
+
+      // ✅ FIX 2: Consistent error logging across all three components
+      if (error) console.error("[StaffPicks]", error.message)
       else setPicks(data || [])
       setLoading(false)
     }
     fetchPicks()
-  }, [])
+  }, [supabase]) // ✅ FIX 3: supabase in dep array — stable ref so no extra fetches
 
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-base font-bold text-stone-900 dark:text-white">
         Staff Picks
       </h3>
+
       {loading ? (
         <div className="space-y-4">
           {[1, 2].map((i) => (
@@ -72,9 +77,13 @@ function StaffPicks() {
             />
           ))}
         </div>
+      ) : picks.length === 0 ? (
+        // ✅ FIX 4: Empty state so the section doesn't render a lonely heading
+        <p className="text-sm text-stone-400 dark:text-stone-500">
+          Nothing here yet.
+        </p>
       ) : (
         picks.map((pick) => (
-          // ✅ wrapped in Link so clicks actually navigate
           <Link
             key={pick.id}
             href={pick.slug ? `/article/${pick.slug}` : "#"}
@@ -105,7 +114,8 @@ function StaffPicks() {
 function RecommendedTopics({ activeTopic, onTopicChange }: SidebarProps) {
   const [categories, setCategories] = useState<TopicCategory[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function fetchTopics() {
@@ -113,18 +123,20 @@ function RecommendedTopics({ activeTopic, onTopicChange }: SidebarProps) {
         .from("topic_categories")
         .select("id, name, topics(id, name)")
         .order("id", { ascending: true })
-      if (error) console.error("RecommendedTopics error:", error)
+
+      if (error) console.error("[RecommendedTopics]", error.message)
       else setCategories((data as TopicCategory[]) || [])
       setLoading(false)
     }
     fetchTopics()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-base font-bold text-stone-900 dark:text-white">
         Recommended topics
       </h3>
+
       {loading ? (
         <div className="flex flex-wrap gap-2">
           {[1, 2, 3, 4].map((i) => (
@@ -134,6 +146,10 @@ function RecommendedTopics({ activeTopic, onTopicChange }: SidebarProps) {
             />
           ))}
         </div>
+      ) : categories.length === 0 ? (
+        <p className="text-sm text-stone-400 dark:text-stone-500">
+          No topics yet.
+        </p>
       ) : (
         categories.map((category) => (
           <div key={category.id} className="flex flex-col gap-2">
@@ -177,17 +193,21 @@ function RecommendedTopics({ activeTopic, onTopicChange }: SidebarProps) {
 function WhoToFollow() {
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  // ✅ Track which authors the user has followed this session
+  const [followed, setFollowed] = useState<Set<string>>(new Set())
+
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function fetchPeople() {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, bio") // ✅ removed non-existent "name" column
+        .select("id, full_name, bio")
         .eq("is_banned", false)
         .limit(3)
+
       if (error) {
-        console.error("WhoToFollow error:", error)
+        console.error("[WhoToFollow]", error.message)
       } else {
         setPeople(
           (data || []).map((p) => {
@@ -204,13 +224,29 @@ function WhoToFollow() {
       setLoading(false)
     }
     fetchPeople()
-  }, [])
+  }, [supabase])
+
+  // ✅ FIX 5: Replaced alert() with optimistic follow toggle.
+  // Wire this to your follows table when ready — swap the TODO comment.
+  function handleFollow(person: Person) {
+    setFollowed((prev) => {
+      const next = new Set(prev)
+      if (next.has(person.id)) {
+        next.delete(person.id)
+      } else {
+        next.add(person.id)
+        // TODO: await supabase.from("follows").insert({ followee_id: person.id })
+      }
+      return next
+    })
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-base font-bold text-stone-900 dark:text-white">
         Who to follow
       </h3>
+
       {loading ? (
         <div className="space-y-4">
           {[1, 2].map((i) => (
@@ -220,41 +256,53 @@ function WhoToFollow() {
             />
           ))}
         </div>
+      ) : people.length === 0 ? (
+        <p className="text-sm text-stone-400 dark:text-stone-500">
+          No writers to suggest yet.
+        </p>
       ) : (
-        people.map((person) => (
-          <div
-            key={person.id}
-            className="flex items-center justify-between gap-3"
-          >
-            <Link
-              href={`/author/${person.id}`}
-              className="flex items-center gap-3 overflow-hidden group"
+        people.map((person) => {
+          const isFollowing = followed.has(person.id)
+          return (
+            <div
+              key={person.id}
+              className="flex items-center justify-between gap-3"
             >
-              <div className="w-9 h-9 rounded-full bg-stone-800 dark:bg-stone-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
-                {person.initial}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm font-bold text-stone-900 dark:text-white truncate group-hover:underline">
-                  {person.name}
-                </p>
-                <p className="text-xs text-stone-400 dark:text-stone-500 line-clamp-1">
-                  {person.bio}
-                </p>
-              </div>
-            </Link>
-            {/* ✅ Follow button — wired up, can connect to Supabase follows table */}
-            <button
-              onClick={() => alert(`Follow ${person.name} — coming soon!`)}
-              className="shrink-0 px-4 py-1.5 rounded-full border border-stone-900 dark:border-stone-400 text-[12px] font-bold text-stone-900 dark:text-stone-300 hover:bg-stone-900 dark:hover:bg-stone-700 hover:text-white transition-colors cursor-pointer"
-            >
-              Follow
-            </button>
-          </div>
-        ))
+              <Link
+                href={`/author/${person.id}`}
+                className="flex items-center gap-3 overflow-hidden group"
+              >
+                <div className="w-9 h-9 rounded-full bg-stone-800 dark:bg-stone-600 flex items-center justify-center text-white text-sm font-medium shrink-0">
+                  {person.initial}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <p className="text-sm font-bold text-stone-900 dark:text-white truncate group-hover:underline">
+                    {person.name}
+                  </p>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 line-clamp-1">
+                    {person.bio}
+                  </p>
+                </div>
+              </Link>
+
+              <button
+                onClick={() => handleFollow(person)}
+                className={`shrink-0 px-4 py-1.5 rounded-full border text-[12px] font-bold transition-colors cursor-pointer ${
+                  isFollowing
+                    ? "bg-stone-900 dark:bg-white text-white dark:text-stone-900 border-stone-900 dark:border-white"
+                    : "border-stone-900 dark:border-stone-400 text-stone-900 dark:text-stone-300 hover:bg-stone-900 dark:hover:bg-stone-700 hover:text-white"
+                }`}
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </button>
+            </div>
+          )
+        })
       )}
     </div>
   )
 }
+
 // ─── Footer Links ─────────────────────────────────────────────────────────────
 
 function FooterLinks() {
@@ -262,7 +310,7 @@ function FooterLinks() {
     { label: "About", href: "/about" },
     { label: "Privacy", href: "/privacy" },
     { label: "Terms", href: "/terms" },
-    { label: "Help", href: "/help" },   // ← give Help its own route too
+    { label: "Help", href: "/help" },
   ]
 
   return (
@@ -270,7 +318,7 @@ function FooterLinks() {
       <div className="flex flex-wrap gap-x-3 gap-y-1">
         {links.map((link) => (
           <Link
-            key={link.label}   // ← was link.href, now link.label
+            key={link.label}
             href={link.href}
             className="text-xs text-stone-400 dark:text-stone-600 hover:text-stone-900 dark:hover:text-stone-400 transition-colors font-sans"
           >

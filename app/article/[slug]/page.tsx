@@ -1,3 +1,4 @@
+// app/article/[slug]/page.tsx
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
@@ -77,7 +78,6 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     a: ["href", "target", "rel", "class"],
     "*": ["class"],
   },
-  // ✅ Fix 2 — auto-upgrade http:// to https:// and enforce noopener
   transformTags: {
     a: (tagName, attribs) => ({
       tagName: "a",
@@ -109,7 +109,6 @@ function getWordCount(html: string | null): number {
   return html.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length
 }
 
-// ✅ Fix 1 — description capped at 155 chars (was 160, Google truncates at ~155)
 function getDescription(article: Pick<ArticleResponse, "subtitle" | "title">): string {
   return article.subtitle
     ? article.subtitle.substring(0, 155)
@@ -148,16 +147,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   ].filter(Boolean)
 
   return {
+    // ✅ FIX 1: metadataBase must be set on every page that uses relative URLs.
+    // Without this, Next.js can't resolve og:image or canonical correctly in prod.
     metadataBase: new URL(SITE_URL),
     title: article.title,
     description,
     keywords,
-    authors: [
-      {
-        name: author,
-        url: `${SITE_URL}/author/${article.author_id}`,
-      },
-    ],
+    authors: [{ name: author, url: `${SITE_URL}/author/${article.author_id}` }],
+    // ✅ FIX 2: This is the single canonical for this page — self-referencing.
+    // The root layout has NO canonical set, so this is the only one. No conflict.
     alternates: {
       canonical: url,
     },
@@ -182,11 +180,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       modifiedTime: article.updated_at || article.created_at,
       authors: [`${SITE_URL}/author/${article.author_id}`],
       tags: article.tags ?? [],
-      images: [{ url: imageUrl, width: 1200, height: 630, alt: article.title }],
+      images: [
+        {
+          url: imageUrl,
+          secureUrl: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: article.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       site: "@nairaly",
+      creator: "@nairaly",
+      // ✅ FIX 3: twitter.title was missing — required for Twitter card rendering.
+      // Without it, Twitter falls back to the page <title> which may differ.
       title: article.title,
       description,
       images: [imageUrl],
@@ -194,7 +203,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-// ✅ Fix 3 — ISR ensures <title> is always in server-rendered HTML
 export const revalidate = 3600
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -226,10 +234,8 @@ export default async function Page({ params }: Props) {
 
   const tagRelatedRaw = tagRelatedResult.data as RelatedArticle[] | null
 
-  // ✅ Prioritize articles sharing the primary tag, then backfill with recents
   const primaryTag = article.tags?.[0] ?? null
   const pool = tagRelatedRaw ?? []
-
   const tagMatches = primaryTag
     ? pool.filter((a: any) => a.tags?.includes(primaryTag))
     : pool
@@ -244,7 +250,6 @@ export default async function Page({ params }: Props) {
     finalRelated = [...finalRelated, ...backfill]
   }
 
-  // Derived values
   const authorName = getAuthorName(article.profiles)
   const authorInitial = authorName[0].toUpperCase()
   const dateISO = new Date(article.created_at).toISOString()
@@ -253,7 +258,6 @@ export default async function Page({ params }: Props) {
   })
   const safeBody = sanitizeHtml(article.body || "", SANITIZE_OPTIONS)
   const authorHref = `/author/${article.author_id}`
-  const excerpt = article.subtitle || article.title
   const description = getDescription(article)
   const imageUrl = article.cover_image || `${SITE_URL}/og-default.jpg`
   const articleUrl = `${SITE_URL}/article/${article.slug}`
@@ -274,10 +278,10 @@ export default async function Page({ params }: Props) {
     coverImage: a.cover_image || "",
   }))
 
-  // ✅ Full BlogPosting schema with ImageObject and inLanguage
   const articleSchema = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
+    "@type": "Article",
+    "@id": articleUrl,
     headline: article.title,
     description,
     image: {
@@ -317,85 +321,102 @@ export default async function Page({ params }: Props) {
     commentCount: article.comments_count,
   }
 
+  // ✅ FIX 4: Breadcrumb schema was defined in the original but never rendered.
+  // Now injected as a second <script> block below the article schema.
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Articles", item: `${SITE_URL}/article` },
+      { "@type": "ListItem", position: 3, name: article.title, item: articleUrl },
+    ],
+  }
+
   return (
     <main className="min-h-screen bg-white dark:bg-stone-950 selection:bg-green-100 dark:selection:bg-green-900/40">
       <ReadingProgress />
       <ViewTracker articleId={article.id} />
 
-      {/* ✅ JSON-LD */}
+      {/* ✅ FIX 4: Both schemas now rendered — article + breadcrumb */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(articleSchema).replace(/</g, "\\u003c"),
         }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c"),
+        }}
+      />
 
       <Navbar />
 
       <article className="max-w-[680px] mx-auto px-4 sm:px-6 pt-6 sm:pt-14 pb-12">
-  {/* ── Header ── */}
-  <header className="mb-6 sm:mb-10">
-    {article.publication && (
-      <div className="mb-3">
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900">
-          <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-          {article.publication}
-        </span>
-      </div>
-    )}
-
-    <h1 className="font-serif text-[1.45rem] sm:text-[1.7rem] md:text-[2.2rem] lg:text-[2.6rem] font-bold text-stone-900 dark:text-white leading-[1.08] mb-3 sm:mb-6 tracking-tight">
-      {article.title}
-    </h1>
-
-    {article.subtitle && (
-      <p className="font-serif text-sm sm:text-base text-stone-500 dark:text-stone-400 leading-snug mb-4 sm:mb-8 font-light italic">
-        {article.subtitle}
-      </p>
-    )}
-
-    <div className="flex flex-wrap items-center justify-between gap-2 py-3 sm:py-6 border-y border-stone-100 dark:border-stone-900">
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        <Link
-          href={authorHref}
-          className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-stone-100 dark:bg-stone-900 shrink-0 shadow-inner group"
-        >
-          {article.profiles?.avatar_url ? (
-            <Image
-              src={article.profiles.avatar_url}
-              alt={authorName}
-              fill
-              sizes="36px 48px"
-              className="object-cover transition-transform group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-green-600 text-white font-bold text-sm">
-              {authorInitial}
+        {/* ── Header ── */}
+        <header className="mb-6 sm:mb-10">
+          {article.publication && (
+            <div className="mb-3">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900">
+                <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+                {article.publication}
+              </span>
             </div>
           )}
-        </Link>
 
-        <div className="flex flex-col text-xs sm:text-sm min-w-0">
-          <Link
-            href={authorHref}
-            className="font-bold text-stone-900 dark:text-white truncate hover:text-green-600 transition-colors"
-          >
-            {authorName}
-          </Link>
-          <div className="flex items-center gap-1 text-stone-400 text-[11px] sm:text-xs mt-0.5">
-            <time dateTime={dateISO}>{dateStr}</time>
-            <span>·</span>
-            <span>{article.read_time || "5 min"} read</span>
+          <h1 className="font-serif text-[1.45rem] sm:text-[1.7rem] md:text-[2.2rem] lg:text-[2.6rem] font-bold text-stone-900 dark:text-white leading-[1.08] mb-3 sm:mb-6 tracking-tight">
+            {article.title}
+          </h1>
+
+          {article.subtitle && (
+            <p className="font-serif text-sm sm:text-base text-stone-500 dark:text-stone-400 leading-snug mb-4 sm:mb-8 font-light italic">
+              {article.subtitle}
+            </p>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-2 py-3 sm:py-6 border-y border-stone-100 dark:border-stone-900">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Link
+                href={authorHref}
+                className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-stone-100 dark:bg-stone-900 shrink-0 shadow-inner group"
+              >
+                {article.profiles?.avatar_url ? (
+                  <Image
+                    src={article.profiles.avatar_url}
+                    alt={authorName}
+                    fill
+                    sizes="36px 48px"
+                    className="object-cover transition-transform group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-green-600 text-white font-bold text-sm">
+                    {authorInitial}
+                  </div>
+                )}
+              </Link>
+
+              <div className="flex flex-col text-xs sm:text-sm min-w-0">
+                <Link
+                  href={authorHref}
+                  className="font-bold text-stone-900 dark:text-white truncate hover:text-green-600 transition-colors"
+                >
+                  {authorName}
+                </Link>
+                <div className="flex items-center gap-1 text-stone-400 text-[11px] sm:text-xs mt-0.5">
+                  <time dateTime={dateISO}>{dateStr}</time>
+                  <span>·</span>
+                  <span>{article.read_time || "5 min"} read</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <ArticleActions authorId={article.author_id} articleId={article.id} slug={article.slug} />
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 shrink-0">
-        <ArticleActions authorId={article.author_id} articleId={article.id} slug={article.slug} />
-      </div>
-    </div>
-  </header>
-
+        </header>
 
         {/* ── Hero image ── */}
         {article.cover_image && (
@@ -406,7 +427,7 @@ export default async function Page({ params }: Props) {
                 alt={article.title}
                 fill
                 priority
-                quality={80}
+                quality={70}
                 fetchPriority="high"
                 placeholder="blur"
                 blurDataURL={BLUR_DATA_URL}
@@ -420,67 +441,63 @@ export default async function Page({ params }: Props) {
         <AudioReader title={article.title} body={article.body || ""} authorName={authorName} />
 
         <section
-  className="
-    prose prose-stone dark:prose-invert max-w-none
-    text-[14px] sm:text-[16px] lg:text-[18px]
-    leading-[1.6] sm:leading-[1.75]
-    text-stone-800 dark:text-stone-200
-    prose-headings:font-serif prose-headings:font-bold prose-headings:tracking-tight
-    prose-h2:text-lg sm:prose-h2:text-2xl
-    prose-p:mb-4 sm:prose-p:mb-6
-    prose-img:rounded-lg sm:prose-img:rounded-3xl
-    prose-blockquote:border-green-500
-    prose-blockquote:bg-stone-50/40 dark:prose-blockquote:bg-stone-900/30
-    prose-a:text-green-600 dark:prose-a:text-green-400
-    prose-code:text-sm prose-code:bg-stone-100 dark:prose-code:bg-stone-800
-    prose-pre:text-sm prose-pre:overflow-x-auto
-  "
-  dangerouslySetInnerHTML={{ __html: safeBody }}
-/>
+          className="
+            prose prose-stone dark:prose-invert max-w-none
+            text-[14px] sm:text-[16px] lg:text-[18px]
+            leading-[1.6] sm:leading-[1.75]
+            text-stone-800 dark:text-stone-200
+            prose-headings:font-serif prose-headings:font-bold prose-headings:tracking-tight
+            prose-h2:text-lg sm:prose-h2:text-2xl
+            prose-p:mb-4 sm:prose-p:mb-6
+            prose-img:rounded-lg sm:prose-img:rounded-3xl
+            prose-blockquote:border-green-500
+            prose-blockquote:bg-stone-50/40 dark:prose-blockquote:bg-stone-900/30
+            prose-a:text-green-600 dark:prose-a:text-green-400
+            prose-code:text-sm prose-code:bg-stone-100 dark:prose-code:bg-stone-800
+            prose-pre:text-sm prose-pre:overflow-x-auto
+          "
+          dangerouslySetInnerHTML={{ __html: safeBody }}
+        />
 
-{/* Clap + Share */}
-<div className="mt-8 sm:mt-12 flex items-center justify-between py-4 sm:py-6 border-y border-stone-100 dark:border-stone-900">
-  <ClapButton articleId={article.id} initialClaps={article.claps_count} />
-  <div className="flex items-center gap-2 sm:gap-3">
-    <ShareButton title={article.title} slug={article.slug} />
-    <button className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors text-sm">
-      🔖
-    </button>
-  </div>
-</div>
+        {/* Clap + Share */}
+        <div className="mt-8 sm:mt-12 flex items-center justify-between py-4 sm:py-6 border-y border-stone-100 dark:border-stone-900">
+          <ClapButton articleId={article.id} initialClaps={article.claps_count} />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ShareButton title={article.title} slug={article.slug} />
+            <button className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors text-sm">
+              🔖
+            </button>
+          </div>
+        </div>
 
-{/* Author bio card */}
-<div className="my-6 sm:my-10 p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-stone-50/50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800">
-  <h3 className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.18em] text-stone-400 mb-2 sm:mb-4">
-    The Writer
-  </h3>
+        {/* Author bio card */}
+        <div className="my-6 sm:my-10 p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-stone-50/50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800">
+          <h3 className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.18em] text-stone-400 mb-2 sm:mb-4">
+            The Writer
+          </h3>
+          <div className="flex gap-3 sm:gap-5">
+            <div className="font-serif text-2xl sm:text-3xl font-bold text-green-600 leading-none mt-1">"</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm sm:text-base text-stone-600 dark:text-stone-300 italic mb-3 sm:mb-5 leading-relaxed">
+                {article.profiles?.bio ||
+                  `${authorName} contributes deep insights into the evolution of Nigeria's digital and cultural landscape.`}
+              </p>
+              <div className="flex items-center justify-between gap-3">
+                <Link
+                  href={authorHref}
+                  className="text-sm font-bold border-b-2 border-green-600 hover:text-green-600 transition-colors"
+                >
+                  View more stories
+                </Link>
+                <button className="px-3 sm:px-4 py-1.5 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-bold hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
+                  Follow
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  <div className="flex gap-3 sm:gap-5">
-    <div className="font-serif text-2xl sm:text-3xl font-bold text-green-600 leading-none mt-1">"</div>
-
-    <div className="flex-1 min-w-0">
-      <p className="text-sm sm:text-base text-stone-600 dark:text-stone-300 italic mb-3 sm:mb-5 leading-relaxed">
-        {article.profiles?.bio ||
-          `${authorName} contributes deep insights into the evolution of Nigeria's digital and cultural landscape.`}
-      </p>
-
-      <div className="flex items-center justify-between gap-3">
-        <Link
-          href={authorHref}
-          className="text-sm font-bold border-b-2 border-green-600 hover:text-green-600 transition-colors"
-        >
-          View more stories
-        </Link>
-
-        <button className="px-3 sm:px-4 py-1.5 rounded-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 text-xs font-bold hover:bg-green-600 dark:hover:bg-green-500 transition-colors">
-          Follow
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<CommentsSection articleId={article.id} initialCount={article.comments_count} />
+        <CommentsSection articleId={article.id} initialCount={article.comments_count} />
       </article>
 
       {/* ── Related articles ── */}

@@ -3,13 +3,16 @@ import type { Metadata } from "next"
 
 const SITE_URL = "https://nairaly.com"
 const GOOGLE_VERIFICATION = "kD-Fi3De8UKlsdFvfEdJVjXyi7vg6bww64EC3qFOkPE"
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.jpg` // ✅ FIX 2: absolute URL, not relative
 
-// Shared base — always applied regardless of Supabase success/failure
+// ✅ FIX 1: canonical REMOVED from baseMetadata entirely.
+// This was the root cause of the conflict reported in the SEO audit:
+// every page inheriting this metadata was getting canonical: "/" injected,
+// overriding the self-referencing canonical set in generateMetadata()
+// on individual pages. Each page must set its own canonical.
+// The homepage (app/page.tsx) sets alternates: { canonical: SITE_URL } itself.
 const baseMetadata: Partial<Metadata> = {
   metadataBase: new URL(SITE_URL),
-  alternates: {
-    canonical: "/", // resolves to https://nairaly.com/
-  },
   verification: {
     google: GOOGLE_VERIFICATION,
   },
@@ -26,31 +29,40 @@ const baseMetadata: Partial<Metadata> = {
   },
 }
 
-// Fallback used when Supabase is unavailable
+const FALLBACK_TITLE = "Nairaly — Nigerian Community of Readers & Writers"
+const FALLBACK_DESCRIPTION =
+  "Discover insightful articles on tech, remote jobs, security, culture, and Nigerian perspectives."
+
 const fallbackMetadata: Metadata = {
   ...baseMetadata,
   title: {
-    default: "Nairaly — Nigerian Community of Readers & Writers",
+    default: FALLBACK_TITLE,
     template: "%s | Nairaly",
   },
-  description:
-    "Discover insightful articles on tech, remote jobs, security, culture, and Nigerian perspectives.",
+  description: FALLBACK_DESCRIPTION,
   openGraph: {
     type: "website",
     url: SITE_URL,
     siteName: "Nairaly",
-    title: "Nairaly — Nigerian Community of Readers & Writers",
-    description:
-      "Discover insightful articles on tech, remote jobs, security, culture, and Nigerian perspectives.",
-    images: [{ url: "/og-default.jpg", width: 1200, height: 630 }],
+    title: FALLBACK_TITLE,
+    description: FALLBACK_DESCRIPTION,
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE,
+        width: 1200,
+        height: 630,
+        // ✅ FIX 4: alt text on OG images — used by LinkedIn, Slack, and
+        // Google when rendering link previews for screen reader users
+        alt: "Nairaly — Nigerian Community of Readers & Writers",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     site: "@nairaly",
-    title: "Nairaly — Nigerian Community of Readers & Writers",
-    description:
-      "Discover insightful articles on tech, remote jobs, security, culture, and Nigerian perspectives.",
-    images: ["/og-default.jpg"],
+    title: FALLBACK_TITLE,
+    description: FALLBACK_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
   },
 }
 
@@ -68,30 +80,44 @@ export async function getSiteMetadata(): Promise<Metadata> {
       return fallbackMetadata
     }
 
-    const ogImage = data.og_image ?? "/og-default.jpg"
+    const ogImage = data.og_image
+      ? `${SITE_URL}${data.og_image.startsWith("/") ? "" : "/"}${data.og_image}`
+      : DEFAULT_OG_IMAGE
+
+    const title = data.title ?? FALLBACK_TITLE
+    const description = data.description ?? FALLBACK_DESCRIPTION
 
     return {
       ...baseMetadata,
       title: {
-        default: data.title,
+        default: title,
         template: "%s | Nairaly",
       },
-      description: data.description,
-      keywords: data.keywords,
+      description,
+      // ✅ FIX 3: keywords guarded — if null/undefined, key is omitted entirely
+      // rather than passing null into the metadata object
+      ...(data.keywords ? { keywords: data.keywords } : {}),
       openGraph: {
         type: "website",
         url: SITE_URL,
         siteName: "Nairaly",
-        // ✅ removed en_NG — not a standard OG locale
-        title: data.og_title ?? data.title,
-        description: data.og_description ?? data.description,
-        images: [{ url: ogImage, width: 1200, height: 630 }],
+        title: data.og_title ?? title,
+        description: data.og_description ?? description,
+        images: [
+          {
+            url: ogImage,
+            width: 1200,
+            height: 630,
+            // ✅ FIX 4: alt on dynamic OG image too
+            alt: data.og_title ?? title,
+          },
+        ],
       },
       twitter: {
         card: "summary_large_image",
         site: "@nairaly",
-        title: data.twitter_title ?? data.title,
-        description: data.twitter_description ?? data.description,
+        title: data.twitter_title ?? title,
+        description: data.twitter_description ?? description,
         images: [ogImage],
       },
     }
