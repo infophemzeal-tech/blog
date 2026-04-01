@@ -433,6 +433,7 @@ export default async function Page({ params }: Props) {
                 blurDataURL={BLUR_DATA_URL}
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, 680px"
+                
               />
             </div>
           </figure>
