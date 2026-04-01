@@ -8,11 +8,7 @@
   --font-serif: Georgia, "Times New Roman", serif;
   --font-sans: system-ui, -apple-system, Arial, sans-serif;
 }
-@font-face {
-  font-family: 'YourSerifFont';
-  src: url('/fonts/serif.woff2') format('woff2');
-  font-display: swap; /* ✅ Shows standard serif until yours is ready */
-}
+
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
