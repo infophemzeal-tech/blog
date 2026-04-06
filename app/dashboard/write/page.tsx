@@ -20,7 +20,11 @@ const TagIcon = () => (
 
 // --- HELPERS ---
 const slugify = (t: string) =>
-  t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80)
+  t.toLowerCase()
+    .replace(/[''`]/g, "")         
+    .replace(/[^a-z0-9]+/g, "-")     
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 80)
 
 const autoParagraph = (t: string): string =>
   !/<[a-z][\s\S]*>/i.test(t)
