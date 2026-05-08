@@ -53,9 +53,9 @@ export default function ArticleCard({
     if (!error) alert("User has been restricted.")
   }
 
-  const viewCount = Number(article.views_count)
+    const viewCount = Number(article.views_count)
   const formattedViews =
-    viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}K` : viewCount || 0
+    viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}K` : viewCount
 
   return (
     <article className="group relative py-2 border-t mb-0 mt-0 border-stone-100 dark:border-stone-800/60 last:border-b-0">
@@ -116,21 +116,25 @@ export default function ArticleCard({
             </span>
             
 
-            <div className="flex items-center gap-0.5 text-stone-400 dark:text-stone-500">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M14.5 2.5c0-1.1-.9-2-2-2s-2 .9-2 2v7.5L9 8.5c-.8-.8-2-.8-2.8 0-.8.8-.8 2 0 2.8l5.3 5.3A6 6 0 0020 11.3V6.5c0-1.1-.9-2-2-2s-2 .9-2 2" />
-              </svg>
-              <span className="text-[10px] leading-none">{article.claps}</span>
-            </div>
+                      {/* ✅ FIX 10: Hide counters until they hit a threshold to avoid 'dead site' signal */}
+            {Number(article.claps) > 0 && (
+              <div className="flex items-center gap-0.5 text-stone-400 dark:text-stone-500">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M14.5 2.5c0-1.1-.9-2-2-2s-2 .9-2 2v7.5L9 8.5c-.8-.8-2-.8-2.8 0-.8.8-.8 2 0 2.8l5.3 5.3A6 6 0 0020 11.3V6.5c0-1.1-.9-2-2-2s-2 .9-2 2" />
+                </svg>
+                <span className="text-[10px] leading-none">{article.claps}</span>
+              </div>
+            )}
 
-            <div className="flex items-center gap-0.5 text-stone-400 dark:text-stone-500">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              <span className="text-[10px] leading-none">{formattedViews}</span>
-            </div>
-
+            {viewCount >= 10 && (
+              <div className="flex items-center gap-0.5 text-stone-400 dark:text-stone-500">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <span className="text-[10px] leading-none">{formattedViews}</span>
+              </div>
+            )}
             {/* Bookmark */}
             <button
               className="ml-auto text-stone-300 dark:text-stone-600 hover:text-stone-500 dark:hover:text-stone-300 transition-colors sm:opacity-0 sm:group-hover:opacity-100"

@@ -4,37 +4,30 @@ import { useEffect } from "react"
 
 interface ViewTrackerProps {
   articleId: string
-  slug: string
 }
 
-export function ViewTracker({ articleId, slug }: ViewTrackerProps) {
+export function ViewTracker({ articleId }: ViewTrackerProps) {
   useEffect(() => {
-    // Increment view count when article loads
-    const incrementViews = async () => {
-      try {
-        // Add a small delay to ensure the user is actually reading
-        const timer = setTimeout(async () => {
-          const response = await fetch(`/api/articles/${articleId}/increment-views`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          })
+    const controller = new AbortController()
 
-          if (!response.ok) {
-            console.error("Failed to increment views")
-          }
-        }, 2000) // Wait 2 seconds before counting as a view
+    const timer = setTimeout(() => {
+      if (document.visibilityState !== "visible") return
 
-        return () => clearTimeout(timer)
-      } catch (error) {
-        console.error("Error tracking view:", error)
-      }
+      fetch(`/api/articles/${articleId}/increment-views`, {
+        method: "POST",
+        signal: controller.signal,
+      }).catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Error tracking view:", err)
+        }
+      })
+    }, 2000)
+
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
     }
-
-    incrementViews()
   }, [articleId])
 
-  // This component doesn't render anything
   return null
 }

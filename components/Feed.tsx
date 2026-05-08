@@ -15,13 +15,14 @@ const formatGistDate = (dateString: string): string => {
   const dayName = date.toLocaleDateString("en-US", { weekday: "short" })
   const monthName = date.toLocaleDateString("en-US", { month: "short" })
   const day = date.getDate()
+  const year = date.getFullYear()
   const getOrdinal = (n: number) => {
     const s = ["th", "st", "nd", "rd"]
     const v = n % 100
     return n + (s[(v - 20) % 10] || s[v] || s[0])
   }
   // ✅ FIX 1: Removed unused `year` variable from formatGistDate
-  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName}`
+  return `Posted on ${dayName} ${getOrdinal(day)} ${monthName} ${year}`
 }
 
 export default function Feed({ activeTab, activeTopic }: Props) {
@@ -108,7 +109,7 @@ export default function Feed({ activeTab, activeTopic }: Props) {
             ? `${(a.claps_count / 1000).toFixed(1)}K`
             : a.claps_count > 0
             ? String(a.claps_count)
-            : "0",
+            : "",
         comments: a.comments_count || 0,
         readTime: a.read_time || "5 min read",
         body: "",

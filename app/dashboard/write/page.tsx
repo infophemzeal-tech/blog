@@ -253,7 +253,7 @@ export default function WritePage() {
         </div>
 
         <div className="border-t border-stone-100 dark:border-stone-900/50" />
-        <RichEditor value={body} onChange={setBody} placeholder="Tell your gist..." />
+        <RichEditor value={body} onChange={setBody} placeholder="Tell your gister..." />
 
         {/* --- SETTINGS GLASS CARD --- */}
         <div className="bg-stone-50/50 dark:bg-stone-900/20 border border-stone-100 dark:border-stone-800 p-6 sm:p-10 rounded-[2.5rem] space-y-10 mt-8 shadow-sm">

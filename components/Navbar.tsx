@@ -189,8 +189,8 @@ export default function Navbar() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-              className="p-2 -ml-1 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all duration-150"
+              aria-label="Open navigation menu"
+              className="p-2 -ml-1 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950 transition-all duration-150"
             >
               <MenuIcon />
             </button>
@@ -216,6 +216,7 @@ export default function Navbar() {
                 ref={desktopSearchRef}
                 type="text"
                 placeholder="Search"
+                aria-label="Search articles"
                 value={search}
                 onChange={(e) => handleChange(e.target.value)}
                 className="
@@ -233,6 +234,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={clearSearch}
+                   aria-label="Clear search"
                   className="absolute right-3 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
                 >
                   <XIcon />
@@ -251,9 +253,9 @@ export default function Navbar() {
           
             <button
               type="button"
-              aria-label="Search"
+              aria-label="Open search"
               onClick={() => setSearchOpen((v) => !v)}
-              className="sm:hidden p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all"
+              className="sm:hidden p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950 transition-all"
             >
               <SearchIcon />
             </button>
@@ -261,8 +263,8 @@ export default function Navbar() {
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-all duration-150"
+               aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                            className="p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-950 transition-all duration-150"
             >
               {theme === "dark" ? <SunIcon /> : <MoonIcon />}
             </button>
@@ -355,6 +357,7 @@ export default function Navbar() {
                   ref={mobileSearchRef}
                   type="text"
                   placeholder="Search Nairaly…"
+                   aria-label="Search articles"
                   value={search}
                   onChange={(e) => handleChange(e.target.value)}
                   className="

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invoicing App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-3xl">
+    <!-- Header -->
+    <div class="flex justify-between items-center border-b pb-4 mb-4">
+      <h1 class="text-2xl font-bold text-red-600">PRINTZION TECHNOLOGY</h1>
+      <div class="text-right">
+        <p class="font-semibold">Invoice To:</p>
+        <p>Jiteprojekts</p>
+        <p>11b Rev. Ogunbiyi street, Gra Ikeja</p>
+      </div>
+    </div>
+
+    <!-- Invoice Info -->
+    <div class="flex justify-between mb-4">
+      <div>
+        <p><span class="font-semibold">Invoice Date:</span> April 07, 2026</p>
+        <p><span class="font-semibold">BN:</span> 2951192</p>
+      </div>
+      <div>
+        <p><span class="font-semibold">Payment Method:</span></p>
+        <p>Account No: 1019664793</p>
+        <p>Account Name: Printzion Technology</p>
+        <p>Bank: Zenith Bank</p>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <table class="w-full border-collapse mb-4">
+      <thead>
+        <tr class="bg-gray-200">
+          <th class="border p-2 text-left">Description</th>
+          <th class="border p-2 text-right">Unit Price</th>
+          <th class="border p-2 text-center">Qty</th>
+          <th class="border p-2 text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody id="invoice-items">
+        <!-- Items will be injected here -->
+      </tbody>
+    </table>
+
+    <!-- Add Item Form -->
+    <div class="flex gap-2 mb-4">
+      <input id="desc" type="text" placeholder="Description" class="border p-2 flex-1">
+      <input id="price" type="number" placeholder="Unit Price" class="border p-2 w-32">
+      <input id="qty" type="number" placeholder="Qty" class="border p-2 w-20">
+      <button onclick="addItem()" class="bg-red-600 text-white px-4 py-2 rounded">Add</button>
+    </div>
+
+    <!-- Total -->
+    <div class="text-right font-bold text-lg">
+      Total: ₦<span id="grand-total">0</span>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-6 border-t pt-4 text-sm text-gray-600">
+      <p>THANK YOU FOR YOUR PATRONAGE</p>
+      <p>📞 +234 7062774479 | ✉️ infoprintzion@gmail.com</p>
+      <p>📍 No 2, Golden Water Estate, Isheri Olofin</p>
+    </div>
+  </div>
+
+  <script>
+    let items = [];
+
+    function addItem() {
+      const desc = document.getElementById('desc').value;
+      const price = parseFloat(document.getElementById('price').value);
+      const qty = parseInt(document.getElementById('qty').value);
+
+      if (!desc || isNaN(price) || isNaN(qty)) return;
+
+      const total = price * qty;
+      items.push({ desc, price, qty, total });
+      renderItems();
+      clearForm();
+    }
+
+    function renderItems() {
+      const tbody = document.getElementById('invoice-items');
+      tbody.innerHTML = '';
+      let grandTotal = 0;
+
+      items.forEach((item, index) => {
+        grandTotal += item.total;
+        tbody.innerHTML += `
+          <tr>
+            <td class="border p-2">${item.desc}</td>
+            <td class="border p-2 text-right">₦${item.price.toLocaleString()}</td>
+            <td class="border p-2 text-center">${item.qty}</td>
+            <td class="border p-2 text-right">₦${item.total.toLocaleString()}</td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('grand-total').textContent = grandTotal.toLocaleString();
+    }
+
+    function clearForm() {
+      document.getElementById('desc').value = '';
+      document.getElementById('price').value = '';
+      document.getElementById('qty').value = '';
+    }
+  </script>
+</body>
+</html>

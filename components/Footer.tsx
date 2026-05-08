@@ -24,9 +24,9 @@ export default function Footer() {
               insights, and perspectives from Nigeria and beyond.
             </p>
 
-            <address className="not-italic flex items-center gap-1.5 text-xs text-stone-500">
-              Made with ❤️ in Lagos, Nigeria {/* ✅ semantic address tag */}
-            </address>
+            <p className="flex items-center gap-1.5 text-xs text-stone-500">
+              Made with ❤️ in Lagos, Nigeria
+            </p>
           </div>
 
           {/* Explore */}
@@ -35,23 +35,23 @@ export default function Footer() {
               Explore
             </h3>
             <ul className="space-y-3 text-sm text-stone-600 dark:text-stone-400">
-  <li><Link href="/about"   className="hover:text-green-600 dark:hover:text-green-400 transition-colors">About Us</Link></li>
-  <li><Link href="/write"   className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Write for Us</Link></li>
-  <li><Link href="/authors" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Our Writers</Link></li>
-  <li><Link href="/contact" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Contact</Link></li>
-</ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h3 className="font-semibold text-stone-900 dark:text-white mb-4 text-sm tracking-widest uppercase">
-              Company
-            </h3>
-            <ul className="space-y-3 text-sm text-stone-600 dark:text-stone-400">
               <li><Link href="/about"   className="hover:text-green-600 dark:hover:text-green-400 transition-colors">About Us</Link></li>
               <li><Link href="/write"   className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Write for Us</Link></li>
               <li><Link href="/authors" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Our Writers</Link></li>
               <li><Link href="/contact" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Contact</Link></li>
+            </ul>
+          </div>
+
+          {/* ✅ FIX 19: Replaced duplicate "Company" column with "Editorial" to boost E-E-A-T */}
+          <div>
+            <h3 className="font-semibold text-stone-900 dark:text-white mb-4 text-sm tracking-widest uppercase">
+              Editorial
+            </h3>
+            <ul className="space-y-3 text-sm text-stone-600 dark:text-stone-400">
+              <li><Link href="/editorial-standards" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Standards & Methods</Link></li>
+              <li><Link href="/corrections" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Corrections Policy</Link></li>
+              <li><Link href="/topics" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Browse Topics</Link></li>
+              <li><Link href="/sitemap.xml" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Sitemap</Link></li>
             </ul>
           </div>
 
@@ -65,13 +65,11 @@ export default function Footer() {
               <li><Link href="/terms"   className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Terms of Service</Link></li>
               <li><Link href="/cookies" className="hover:text-green-600 dark:hover:text-green-400 transition-colors">Cookie Policy</Link></li>
             </ul>
-           
           </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-stone-200 dark:border-stone-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-stone-500">
-          {/* ✅ consolidated copyright + tagline */}
           <p>© {currentYear} Nairaly · Built for curious minds · Lagos, Nigeria</p>
 
           <div className="flex items-center gap-6">
@@ -79,7 +77,7 @@ export default function Footer() {
               href="https://twitter.com/nairaly"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Nairaly on Twitter (opens in new tab)" // ✅ aria-label added
+              aria-label="Nairaly on Twitter (opens in new tab)"
               className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
             >
               Twitter
@@ -88,17 +86,10 @@ export default function Footer() {
               href="https://instagram.com/nairaly"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Nairaly on Instagram (opens in new tab)" // ✅ aria-label added
+              aria-label="Nairaly on Instagram (opens in new tab)"
               className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
             >
               Instagram
-            </Link>
-            <Link
-              href="/sitemap.xml"
-              aria-label="XML Sitemap"
-              className="hover:text-green-600 dark:hover:text-green-400 transition-colors"
-            >
-              Sitemap
             </Link>
           </div>
         </div>

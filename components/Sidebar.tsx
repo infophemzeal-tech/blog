@@ -8,7 +8,6 @@ import Link from "next/link"
 
 interface SidebarProps {
   activeTopic: string
-  onTopicChange: (slug: string) => void
 }
 
 type StaffPick = {
@@ -42,8 +41,6 @@ function StaffPicks() {
   const [picks, setPicks] = useState<StaffPick[]>([])
   const [loading, setLoading] = useState(true)
 
-  // ✅ FIX 1: createClient() inside useMemo so it's stable across renders
-  // but not recreated on every render cycle
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -54,13 +51,12 @@ function StaffPicks() {
         .order("id", { ascending: true })
         .limit(3)
 
-      // ✅ FIX 2: Consistent error logging across all three components
       if (error) console.error("[StaffPicks]", error.message)
       else setPicks(data || [])
       setLoading(false)
     }
     fetchPicks()
-  }, [supabase]) // ✅ FIX 3: supabase in dep array — stable ref so no extra fetches
+  }, [supabase])
 
   return (
     <div className="flex flex-col gap-4">
@@ -78,7 +74,6 @@ function StaffPicks() {
           ))}
         </div>
       ) : picks.length === 0 ? (
-        // ✅ FIX 4: Empty state so the section doesn't render a lonely heading
         <p className="text-sm text-stone-400 dark:text-stone-500">
           Nothing here yet.
         </p>
@@ -111,7 +106,7 @@ function StaffPicks() {
 
 // ─── Recommended Topics ───────────────────────────────────────────────────────
 
-function RecommendedTopics({ activeTopic, onTopicChange }: SidebarProps) {
+function RecommendedTopics({ activeTopic }: SidebarProps) {
   const [categories, setCategories] = useState<TopicCategory[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -162,16 +157,17 @@ function RecommendedTopics({ activeTopic, onTopicChange }: SidebarProps) {
                 const isActive = activeTopic === topicSlug
                 return (
                   <span key={topic.id} className="text-sm">
-                    <button
-                      onClick={() => onTopicChange(topicSlug)}
-                      className={`transition-colors cursor-pointer text-left ${
+                    {/* ✅ SEO FIX: Changed from <button> to <Link> so Google crawls and indexes these hubs */}
+                    <Link
+                      href={`/topic/${topicSlug}`}
+                      className={`transition-colors ${
                         isActive
-                          ? "text-green-600 font-bold underline underline-offset-4"
-                          : "text-stone-500 dark:text-stone-400 hover:text-green-600 dark:hover:text-green-400"
+                          ? "text-green-600 font-bold underline underline-offset-4 decoration-green-600"
+                          : "text-stone-500 dark:text-stone-400 hover:text-green-600 dark:hover:text-green-400 hover:underline underline-offset-4 decoration-stone-300 dark:decoration-stone-600"
                       }`}
                     >
                       {topic.name}
-                    </button>
+                    </Link>
                     {index < (category.topics || []).length - 1 && (
                       <span className="text-stone-300 dark:text-stone-600">
                         ,{" "}
@@ -193,7 +189,6 @@ function RecommendedTopics({ activeTopic, onTopicChange }: SidebarProps) {
 function WhoToFollow() {
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
-  // ✅ Track which authors the user has followed this session
   const [followed, setFollowed] = useState<Set<string>>(new Set())
 
   const supabase = useMemo(() => createClient(), [])
@@ -226,8 +221,6 @@ function WhoToFollow() {
     fetchPeople()
   }, [supabase])
 
-  // ✅ FIX 5: Replaced alert() with optimistic follow toggle.
-  // Wire this to your follows table when ready — swap the TODO comment.
   function handleFollow(person: Person) {
     setFollowed((prev) => {
       const next = new Set(prev)
@@ -335,12 +328,12 @@ function FooterLinks() {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-export default function Sidebar({ activeTopic, onTopicChange }: SidebarProps) {
+export default function Sidebar({ activeTopic }: SidebarProps) {
   return (
     <aside className="flex flex-col gap-8 sticky top-4">
       <StaffPicks />
       <div className="border-t border-stone-100 dark:border-stone-800" />
-      <RecommendedTopics activeTopic={activeTopic} onTopicChange={onTopicChange} />
+      <RecommendedTopics activeTopic={activeTopic} />
       <div className="border-t border-stone-100 dark:border-stone-800" />
       <WhoToFollow />
       <div className="border-t border-stone-100 dark:border-stone-800" />

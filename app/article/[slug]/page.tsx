@@ -100,8 +100,18 @@ const RELATED_SELECT =
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getAuthorName(profiles: Pick<AuthorProfile, "full_name"> | null): string {
-  return profiles?.full_name?.trim() || "Nairaly Writer"
+function getAuthorName(
+  profiles: Pick<AuthorProfile, "full_name"> | null,
+  articleId?: string
+): string {
+  const name = profiles?.full_name?.trim()
+  if (!name) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn(`[E-E-A-T] article ${articleId ?? "unknown"} has no author full_name — will render "Nairaly Writer"`)
+    }
+    return "Nairaly Writer"
+  }
+  return name
 }
 
 function getWordCount(html: string | null): number {
@@ -203,7 +213,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export const revalidate = 3600
+export const revalidate = 300
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -262,7 +272,7 @@ export default async function Page({ params }: Props) {
   const imageUrl = article.cover_image || `${SITE_URL}/og-default.jpg`
   const articleUrl = `${SITE_URL}/article/${article.slug}`
 
-  const relatedTransformed: Article[] = finalRelated.map((a) => ({
+    const relatedTransformed: Article[] = finalRelated.map((a) => ({
     id: a.id,
     author: getAuthorName(a.profiles as any),
     authorInitial: (a.profiles?.full_name?.[0] || "N").toUpperCase(),
@@ -270,7 +280,7 @@ export default async function Page({ params }: Props) {
     slug: a.slug,
     title: a.title,
     subtitle: a.subtitle || "",
-    date: new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+   date: new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     claps: String(a.claps_count || 0),
     comments: a.comments_count || 0,
     readTime: a.read_time ?? "3 min",

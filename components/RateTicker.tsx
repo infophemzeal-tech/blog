@@ -16,18 +16,19 @@ type RateItemProps = {
 
 function RateItem({ flag, label, value }: RateItemProps) {
   return (
-    <div className="inline-flex items-center gap-2.5 px-8 py-2.5 border-r border-white/[0.08] shrink-0 group cursor-default">
-      <span className=" text-white/90 font-mono group-hover:text-green-900 transition-colors">{flag}</span>
-      <span className="text-[12px] tracking-[0.12em] uppercase text-white/90 font-mono group-hover:text-green-600 transition-colors">
+    // ✅ FIX 9: Reduced padding (px-4 py-1) to fit the new 24px strip height
+    <div className="inline-flex items-center gap-1.5 px-4 py-1 border-r border-stone-300 dark:border-stone-700 shrink-0">
+      <span className="text-[11px]">{flag}</span>
+      {/* ✅ FIX 9: Updated text colors for neutral background */}
+      <span className="text-[11px] tracking-wider uppercase text-stone-500 dark:text-stone-400 font-medium">
         {label}
       </span>
-      <div className="w-px h-2.5 bg-white/15" />
       {value ? (
-        <span className="text-[13px] font-medium text-[#a8e063] tracking-[0.04em] font-mono tabular-nums group-hover:text-green-600 transition-colors">
+        <span className="text-[11px] font-semibold text-green-700 dark:text-green-500 tracking-wide tabular-nums">
           ₦{value.toLocaleString("en-NG")}
         </span>
       ) : (
-        <span className="w-16 h-3 rounded-sm bg-white/[0.07] animate-pulse inline-block" />
+        <span className="w-12 h-2.5 rounded-sm bg-stone-200 dark:bg-stone-700 animate-pulse inline-block" />
       )}
     </div>
   )
@@ -38,7 +39,7 @@ export default function RateTicker() {
   if (error) return null
 
   return (
-    <div className="relative flex items-center overflow-hidden">
+    <div className="relative flex items-center overflow-hidden h-full">
       <div className="flex animate-ticker hover:[animation-play-state:paused]">
         {Array.from({ length: 2 }).map((_, i) => (
           <div key={i} className="flex">
@@ -50,19 +51,14 @@ export default function RateTicker() {
                 value={rates?.[p.code]}
               />
             ))}
-            <span className="inline-flex items-center px-5 text-white/40 text-base border-r border-white/[0.08]">
-              *
-            </span>
           </div>
         ))}
       </div>
-  {/* ✅ fade color matches bg-[#13760a] */}
-      <div className="absolute right-0 top-0 bottom-0 flex items-center pl-12 pr-4 pointer-events-none bg-gradient-to-l from-[#13760a] via-[#13760a]/80 to-transparent">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#a8e063] animate-pulse mr-1.5" />
-        <span className="text-[12px] tracking-[0.14em] uppercase text-white/90 font-mono">
-          {rates ? `Updated ${rates.updatedAt}` : "Live"}
-        </span>
-      </div>
+      
+      {/* ✅ FIX 2: Removed the live "Updated HH:MM" timestamp and pulsing dot. 
+          It caused layout shifts and continuous JS re-renders. 
+          Replaced with a simple gradient fade that matches the new neutral background. */}
+      <div className="absolute right-0 top-0 bottom-0 pl-6 pr-2 pointer-events-none bg-gradient-to-l from-stone-100 dark:from-stone-900 via-stone-100/80 dark:via-stone-900/80 to-transparent" />
       
     </div>
   )

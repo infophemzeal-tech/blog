@@ -17,10 +17,10 @@ const geist = Geist({
   preload: true,
 })
 
-const GA_ID = "G-HGYRG1B4DJ"
-const SITE_URL = "https://nairaly.com"
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-HGYRG1B4DJ"
+const SITE_URL = "https://www.nairaly.com"
 
-// ✅ Viewport
+// ─── Viewport ────────────────────────────────────────────────────────────────
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -30,17 +30,18 @@ export const viewport: Viewport = {
   ],
 }
 
-// ✅ FIX: Proper metadata root config (NO canonical here)
+// ─── Metadata ────────────────────────────────────────────────────────────────
 export async function generateMetadata(): Promise<Metadata> {
   const base = await getSiteMetadata()
-
   return {
     ...base,
-    metadataBase: new URL(SITE_URL), // ✅ critical for canonical resolution
+    metadataBase: new URL(SITE_URL),
+    // No canonical here — each page declares its own.
+    // A layout-level canonical would stamp "/" on every route.
   }
 }
 
-// ✅ Organization Schema (Upgraded)
+// ─── Structured Data ─────────────────────────────────────────────────────────
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -58,7 +59,6 @@ const organizationSchema = {
   ],
 }
 
-// ✅ Website Schema (Upgraded with SearchAction)
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -71,14 +71,23 @@ const websiteSchema = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// ─── Layout ──────────────────────────────────────────────────────────────────
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-       <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
 
-        {/* ✅ Structured Data */}
+        {/* Structured Data — XSS-safe */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -94,7 +103,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body
-        className={`${geist.className} text-sm sm:text-base bg-white dark:bg-stone-950 transition-colors duration-300 flex flex-col min-h-screen antialiased`}
+        className={[
+          geist.variable,
+          "font-sans",
+          "text-sm sm:text-base",
+          "bg-white dark:bg-stone-950",
+          "transition-colors duration-300",
+          "flex flex-col min-h-screen",
+          "antialiased",
+        ].join(" ")}
       >
         <ThemeProvider>
           <AuthProvider>
@@ -106,7 +123,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AuthProvider>
         </ThemeProvider>
 
-        {/* ✅ Google Analytics */}
+        {/* GA outside providers — correct, doesn't need React context */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="lazyOnload"

@@ -2,6 +2,9 @@ import type { Metadata } from "next"
 import { Suspense } from "react"
 import HomeContent from "@/components/Homecontent"
 
+// ✅ FIX 1: Enable Vercel Edge caching for 5 minutes
+export const revalidate = 300
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CANONICAL — fixes "Duplicate without user-selected canonical" in GSC.
 // ?topic= and ?tab= are UI filters, not distinct indexable pages.
@@ -11,20 +14,24 @@ export const metadata: Metadata = {
   title: "Nairaly — Stories for curious readers and writers",
   description: "Discover deep reads on culture, tech, business, and life in Nigeria and beyond.",
   alternates: {
-    canonical: "https://www.nairaly.com/",
+    // ✅ FIX 4: Removed 'www.' to match the apex domain users actually land on
+    canonical: "https://nairaly.com/",
   },
   openGraph: {
-    title: "Nairaly",
+    // ✅ FIX 7: Changed from just "Nairaly" to descriptive tagline for better social shares
+    title: "Nairaly — Stories for curious readers and writers",
     description: "Discover deep reads on culture, tech, business, and life in Nigeria and beyond.",
-    url: "https://www.nairaly.com/",
+    // ✅ FIX 4: Removed 'www.'
+    url: "https://nairaly.com/",
     type: "website",
-    images: [{ url: "https://www.nairaly.com/og-default.jpg", width: 1200, height: 630 }],
+    images: [{ url: "https://nairaly.com/og-default.jpg", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Nairaly",
+    // ✅ FIX 7: Changed from just "Nairaly" to descriptive tagline
+    title: "Nairaly — Stories for curious readers and writers",
     description: "Discover deep reads on culture, tech, business, and life in Nigeria and beyond.",
-    images: ["https://www.nairaly.com/og-default.jpg"],
+    images: ["https://nairaly.com/og-default.jpg"],
   },
 }
 

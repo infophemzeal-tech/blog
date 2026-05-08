@@ -7,15 +7,6 @@ import Tabs from "@/components/Tabs"
 import Feed from "@/components/Feed"
 import Sidebar from "@/components/Sidebar"
 
-/**
- * HomeContent — Client Component
- *
- * Extracted from page.tsx so that page.tsx can remain a Server Component
- * and export `metadata` (including the canonical URL).
- *
- * `generateMetadata` / `metadata` exports are only valid in Server Components,
- * but `useSearchParams` requires a Client Component — hence the split.
- */
 export default function HomeContent() {
   const router = useRouter()
   const pathname = usePathname()
@@ -44,13 +35,6 @@ export default function HomeContent() {
 
   return (
     <main className="max-w-5xl mx-auto pb-12">
-      {/* SEO h1 — visually hidden but crawlable by Google */}
-      <h1 className="sr-only">
-        {activeTopic
-          ? `${activeTopic.replace(/-/g, " ")} articles — Nairaly`
-          : "Nairaly — Stories for curious readers and writers"}
-      </h1>
-
       <TopBanner />
       <Navbar />
 
@@ -60,6 +44,19 @@ export default function HomeContent() {
         }`}
       >
         <div className="flex-1 min-w-0">
+          
+          {/* ✅ FIX 7: Visible H1 instead of sr-only. Gives clear value prop and SEO keyword weight */}
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white tracking-tight mb-6">
+            {activeTopic
+              ? activeTopic.replace(/-/g, " ")
+              : "Sharp reads on Nigeria"}
+            {!activeTopic && (
+              <span className="block text-base sm:text-lg font-normal text-stone-500 dark:text-stone-400 mt-1 tracking-normal font-sans">
+                Money, tech, culture & life
+              </span>
+            )}
+          </h1>
+
           <Tabs
             activeTab={activeTab}
             onTabChange={(tab) => updateFilters({ tab })}
