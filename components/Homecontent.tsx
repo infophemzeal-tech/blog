@@ -84,9 +84,8 @@ export default function HomeContent() {
 
         <div className="w-72 shrink-0 hidden lg:block">
           <div className="pt-6 pl-8 border-l border-stone-100 dark:border-stone-800 sticky top-24">
-            <Sidebar
+                        <Sidebar
               activeTopic={activeTopic}
-              onTopicChange={(slug) => updateFilters({ topic: slug })}
             />
           </div>
         </div>
