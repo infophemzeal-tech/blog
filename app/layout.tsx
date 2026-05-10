@@ -18,7 +18,7 @@ const geist = Geist({
 })
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-HGYRG1B4DJ"
-const SITE_URL = "https://www.nairaly.com"
+const SITE_URL = "https://nairaly.com"
 
 // ─── Viewport ────────────────────────────────────────────────────────────────
 export const viewport: Viewport = {

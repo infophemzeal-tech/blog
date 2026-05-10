@@ -40,7 +40,7 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Claude-Web",      allow: ["/"] },  // Claude browsing
       
       // ── AI Training Crawlers (keep blocked to opt out of training) ──
-      { userAgent: "GPTBot",       disallow: ["/"] },  // OpenAI training data
+      { userAgent: "GPTBot",       allow: ["/"] },  // OpenAI training data
       { userAgent: "CCBot",        disallow: ["/"] },  // Common Crawl
       { userAgent: "anthropic-ai", disallow: ["/"] },  // Anthropic training
       { userAgent: "Omgilibot",    disallow: ["/"] },  // Perplexity training

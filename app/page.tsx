@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import HomeContent from "@/components/Homecontent"
+import NewsletterCapture from "@/components/NewsletterCapture"
 
 // ✅ FIX 1: Enable Vercel Edge caching for 5 minutes
 export const revalidate = 300
@@ -37,17 +38,24 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-[80vh] flex items-center justify-center bg-white dark:bg-stone-950">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-4 border-stone-200 dark:border-stone-700 border-t-green-600 rounded-full animate-spin" />
-            <p className="text-sm text-stone-500 dark:text-stone-400">Loading your feed...</p>
+    <>
+      <Suspense
+        fallback={
+          <div className="min-h-[80vh] flex items-center justify-center bg-white dark:bg-stone-950">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-stone-200 dark:border-stone-700 border-t-green-600 rounded-full animate-spin" />
+              <p className="text-sm text-stone-500 dark:text-stone-400">Loading your feed...</p>
+            </div>
           </div>
-        </div>
-      }
-    >
-      <HomeContent />
-    </Suspense>
+        }
+      >
+        <HomeContent />
+      </Suspense>
+
+      {/* ✅ Newsletter CTA: Placed between the feed and the footer for maximum visibility */}
+      <div className="max-w-5xl mx-auto px-4 pb-12">
+        <NewsletterCapture />
+      </div>
+    </>
   )
 }

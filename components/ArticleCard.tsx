@@ -126,7 +126,7 @@ export default function ArticleCard({
               </div>
             )}
 
-            {viewCount >= 10 && (
+            {viewCount >= 5 && (
               <div className="flex items-center gap-0.5 text-stone-400 dark:text-stone-500">
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />

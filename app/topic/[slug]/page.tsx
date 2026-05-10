@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { createClient } from "@/lib/supabase/server"
+import { createPublicClient } from "@/lib/supabase/server"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ArticleCard from "@/components/ArticleCard"
@@ -45,7 +45,7 @@ export const revalidate = 300
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   
   // Reverse the slugify (e.g., "job-vacancies" -> "job vacancies")
   const topicName = slug.replace(/-/g, " ")
@@ -91,7 +91,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TopicPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+    const supabase = createPublicClient()
   
   const topicName = slug.replace(/-/g, " ")
 

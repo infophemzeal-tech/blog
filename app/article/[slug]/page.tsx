@@ -1,7 +1,6 @@
-// app/article/[slug]/page.tsx
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { createClient } from "@/lib/supabase/server"
+import { createPublicClient } from "@/lib/supabase/server"
 import Navbar from "@/components/Navbar"
 import ArticleCard from "@/components/ArticleCard"
 import ReadingProgress from "@/components/ReadingProgress"
@@ -13,6 +12,7 @@ import sanitizeHtml from "sanitize-html"
 import type { Article } from "@/data/articles"
 import ClapButton from "@/components/ClapButton"
 import { AudioReader, CommentsSection, ViewTracker } from "@/components/DeferredComponents"
+import NewsletterCapture from "@/components/NewsletterCapture"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -129,7 +129,7 @@ function getDescription(article: Pick<ArticleResponse, "subtitle" | "title">): s
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const { data: article } = await supabase
     .from("articles")
@@ -144,7 +144,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
-  const author = getAuthorName(article.profiles)
+  // ✅ FIX: Extract from Supabase array
+  const profileData = Array.isArray(article.profiles) ? article.profiles[0] : article.profiles
+  const author = getAuthorName(profileData)
   const description = getDescription(article)
   const url = `${SITE_URL}/article/${article.slug}`
   const imageUrl = article.cover_image || `${SITE_URL}/og-default.jpg`
@@ -157,15 +159,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   ].filter(Boolean)
 
   return {
-    // ✅ FIX 1: metadataBase must be set on every page that uses relative URLs.
-    // Without this, Next.js can't resolve og:image or canonical correctly in prod.
     metadataBase: new URL(SITE_URL),
     title: article.title,
     description,
     keywords,
     authors: [{ name: author, url: `${SITE_URL}/author/${article.author_id}` }],
-    // ✅ FIX 2: This is the single canonical for this page — self-referencing.
-    // The root layout has NO canonical set, so this is the only one. No conflict.
     alternates: {
       canonical: url,
     },
@@ -204,8 +202,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       site: "@nairaly",
       creator: "@nairaly",
-      // ✅ FIX 3: twitter.title was missing — required for Twitter card rendering.
-      // Without it, Twitter falls back to the page <title> which may differ.
       title: article.title,
       description,
       images: [imageUrl],
@@ -219,7 +215,7 @@ export const revalidate = 300
 
 export default async function Page({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const [articleResult, tagRelatedResult] = await Promise.all([
     supabase
@@ -242,15 +238,15 @@ export default async function Page({ params }: Props) {
   const article = articleResult.data as ArticleResponse | null
   if (!article) notFound()
 
-  const tagRelatedRaw = tagRelatedResult.data as RelatedArticle[] | null
+ const tagRelatedRaw = (tagRelatedResult.data || []) as any[]
 
   const primaryTag = article.tags?.[0] ?? null
-  const pool = tagRelatedRaw ?? []
+  const pool = tagRelatedRaw
   const tagMatches = primaryTag
-    ? pool.filter((a: any) => a.tags?.includes(primaryTag))
+    ? pool.filter((a) => a.tags?.includes(primaryTag))
     : pool
 
-  let finalRelated = tagMatches.slice(0, 3)
+  let finalRelated = tagMatches.slice(0, 3) as any[]
 
   if (finalRelated.length < 3) {
     const exclude = new Set([slug, ...finalRelated.map((a) => a.slug)])
@@ -260,7 +256,9 @@ export default async function Page({ params }: Props) {
     finalRelated = [...finalRelated, ...backfill]
   }
 
-  const authorName = getAuthorName(article.profiles)
+  // ✅ FIX: Extract from Supabase array
+  const profileData = Array.isArray(article.profiles) ? article.profiles[0] : article.profiles
+  const authorName = getAuthorName(profileData)
   const authorInitial = authorName[0].toUpperCase()
   const dateISO = new Date(article.created_at).toISOString()
   const dateStr = new Date(article.created_at).toLocaleDateString("en-NG", {
@@ -272,21 +270,25 @@ export default async function Page({ params }: Props) {
   const imageUrl = article.cover_image || `${SITE_URL}/og-default.jpg`
   const articleUrl = `${SITE_URL}/article/${article.slug}`
 
-    const relatedTransformed: Article[] = finalRelated.map((a) => ({
-    id: a.id,
-    author: getAuthorName(a.profiles as any),
-    authorInitial: (a.profiles?.full_name?.[0] || "N").toUpperCase(),
-    publication: a.publication || "",
-    slug: a.slug,
-    title: a.title,
-    subtitle: a.subtitle || "",
-   date: new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-    claps: String(a.claps_count || 0),
-    comments: a.comments_count || 0,
-    readTime: a.read_time ?? "3 min",
-    body: "",
-    coverImage: a.cover_image || "",
-  }))
+  const relatedTransformed: Article[] = finalRelated.map((a: any) => {
+    const relatedProfile = a.profiles?.[0] || a.profiles
+    return {
+      id: a.id,
+      author: getAuthorName(relatedProfile),
+      authorInitial: (relatedProfile?.full_name?.[0] || "N").toUpperCase(),
+      publication: a.publication || "",
+      slug: a.slug,
+      title: a.title,
+      subtitle: a.subtitle || "",
+      date: new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      // ✅ FIX: Hide 0 claps
+      claps: a.claps_count > 0 ? String(a.claps_count) : "",
+      comments: a.comments_count || 0,
+      readTime: a.read_time ?? "3 min",
+      body: "",
+      coverImage: a.cover_image || "",
+    }
+  })
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -331,8 +333,6 @@ export default async function Page({ params }: Props) {
     commentCount: article.comments_count,
   }
 
-  // ✅ FIX 4: Breadcrumb schema was defined in the original but never rendered.
-  // Now injected as a second <script> block below the article schema.
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -348,7 +348,6 @@ export default async function Page({ params }: Props) {
       <ReadingProgress />
       <ViewTracker articleId={article.id} />
 
-      {/* ✅ FIX 4: Both schemas now rendered — article + breadcrumb */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -392,9 +391,9 @@ export default async function Page({ params }: Props) {
                 href={authorHref}
                 className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-stone-100 dark:bg-stone-900 shrink-0 shadow-inner group"
               >
-                {article.profiles?.avatar_url ? (
+                {profileData?.avatar_url ? (
                   <Image
-                    src={article.profiles.avatar_url}
+                    src={profileData.avatar_url}
                     alt={authorName}
                     fill
                     sizes="36px 48px"
@@ -443,7 +442,6 @@ export default async function Page({ params }: Props) {
                 blurDataURL={BLUR_DATA_URL}
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, 680px"
-                
               />
             </div>
           </figure>
@@ -481,6 +479,9 @@ export default async function Page({ params }: Props) {
           </div>
         </div>
 
+        {/* ✅ Newsletter Capture */}
+        <NewsletterCapture />
+
         {/* Author bio card */}
         <div className="my-6 sm:my-10 p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-stone-50/50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800">
           <h3 className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.18em] text-stone-400 mb-2 sm:mb-4">
@@ -490,7 +491,7 @@ export default async function Page({ params }: Props) {
             <div className="font-serif text-2xl sm:text-3xl font-bold text-green-600 leading-none mt-1">"</div>
             <div className="flex-1 min-w-0">
               <p className="text-sm sm:text-base text-stone-600 dark:text-stone-300 italic mb-3 sm:mb-5 leading-relaxed">
-                {article.profiles?.bio ||
+                {profileData?.bio ||
                   `${authorName} contributes deep insights into the evolution of Nigeria's digital and cultural landscape.`}
               </p>
               <div className="flex items-center justify-between gap-3">
@@ -520,7 +521,7 @@ export default async function Page({ params }: Props) {
             </h2>
             <div className="flex flex-col gap-6 sm:gap-10">
               {relatedTransformed.map((a) => (
-                <ArticleCard key={a.id} article={a} />
+                                <ArticleCard key={a.id || a.slug} article={a} />
               ))}
             </div>
           </div>
